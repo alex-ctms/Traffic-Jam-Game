@@ -9,3 +9,4 @@
 .hermes/
 .worktrees/
 /ops/state/
+.ops/

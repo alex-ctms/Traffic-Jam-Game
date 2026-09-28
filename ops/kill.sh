@@ -4,7 +4,7 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 STATE="$ROOT/ops/state"
-SESSION="${OVERNIGHT_TMUX_SESSION:-overnight-$(basename "$ROOT")}"
+SESSION="${OVERNIGHT_TMUX_SESSION:-overnight-$(basename "$ROOT" | tr '[:upper:]' '[:lower:]')}"
 mkdir -p "$STATE"
 
 case "${1:-}" in
