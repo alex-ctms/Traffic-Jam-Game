@@ -223,6 +223,9 @@ audit_done() {
 # ---------------------------------------------------------------------------
 WAVE=0
 WAVE_LOG="$STATE/waves.jsonl"
+# Integer priority. Lower dispatches first, so later waves sort after earlier
+# ones while the in-flight work keeps its place.
+WAVE_PRIORITY="${OVERNIGHT_WAVE_PRIORITY:-50}"
 
 plan_prompt() {
   cat <<'PROMPT'
@@ -320,20 +323,25 @@ PY
     assignee=$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["assignee"])' "$line" 2>/dev/null)
     body=$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["body"])' "$line" 2>/dev/null)
     [ -z "$title" ] && continue
-    local args=(--idempotency-key "$BOARD:w$WAVE:$i" --priority "PH2"
+    # --priority takes an INTEGER, not a "PH2" string. Passing a label makes
+    # argparse exit 2, so every card silently failed to create and the wave
+    # reported zero cards. LOWER numbers dispatch first.
+    local args=(--idempotency-key "$BOARD:w$WAVE:$i" --priority "$WAVE_PRIORITY"
                 --assignee "$assignee" --workspace worktree
                 --completion-contract local-only --body-file -)
     deps=$(python3 -c 'import json,sys;print(" ".join(json.loads(sys.argv[1]).get("depends_on",[])))' "$line" 2>/dev/null)
     for d in $deps; do
       [ "$d" -lt "$i" ] 2>/dev/null && args+=(--parent "${ids[$d]}")
     done
-    new=$(hermes kanban create "$title" "${args[@]}" <<<"$body" 2>/dev/null \
-          | grep -oE '\bt_[0-9a-f]{8}\b' | head -1)
+    create_out=$(hermes kanban create "$title" "${args[@]}" <<<"$body" 2>&1)
+    new=$(printf '%s' "$create_out" | grep -oE '\bt_[0-9a-f]{8}\b' | head -1)
     if [ -n "$new" ]; then
       ids+=("$new")
       log "  created $new [$assignee] $title"
     else
-      log "  FAILED to create: $title"
+      # Log the reason. A silent failure here is how a whole wave produced
+      # nothing while the log said "plan validated".
+      log "  FAILED to create [$assignee] $title: $(printf '%s' "$create_out" | tr '\n' ' ' | tail -c 200)"
     fi
     i=$((i + 1))
   done < <(python3 - "$plan_file" <<'PY' 2>/dev/null
