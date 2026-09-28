@@ -393,3 +393,21 @@ impl SimulatedView<'a> {
 ---
 
 *End of ADRs*
+
+# Decision Record: Bevy Version Selection
+
+## Context
+We need to select a Bevy version for the traffic jam game that supports headless operation on Linux.
+
+## Decision
+We choose Bevy 0.13 as it's the latest stable version compatible with the project's Rust edition and provides sufficient features while being actively maintained.
+
+## Rationale
+- Version 0.13 is compatible with Rust 2021 edition
+- It has good documentation and community support
+- The minimal feature set allows for headless operation without heavy dependencies
+
+## Acceptance Criteria
+- `cargo run -p tj_game` successfully boots a Bevy app in headless mode
+- No system libraries are required beyond standard Linux
+- Headless operation meets project needs
