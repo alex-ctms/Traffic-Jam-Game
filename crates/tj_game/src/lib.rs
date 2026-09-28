@@ -1,15 +1,18 @@
-// Game module placeholder
+// Game module: headless-safe Bevy app wiring.
+//
+// Bevy 0.13 has no `add_startup_system` method. That name is a Bevy 0.14+ API.
+// The 0.13 way is `add_systems(Startup, ...)`. Keeping this note because the
+// mismatch is silent until compile time.
+
+use bevy::prelude::*;
 
 pub fn run() {
-    use bevy::prelude::*;
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_startup_system(setup)
+        .add_systems(Startup, setup)
         .run();
 }
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
-    // Placeholder: will hide window in CI if needed
 }
-
