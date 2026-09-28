@@ -121,26 +121,39 @@ runnable_ready() {
 # (HEAD..BASE) counts commits it is missing and yields a false pass.
 audit_one() {
   local id="$1" wt="$ROOT/.worktrees/$id"
-  [ -d "$wt/.git" ] || [ -f "$wt/.git" ] || { echo "no-worktree $id"; return 2; }
-  local ahead dirty wt_head main_head
+  local branch="wt/$id" fork main_head wt_head dirty ahead
   main_head=$(git rev-parse HEAD 2>/dev/null)
-  ahead=$(git -C "$wt" rev-list --count "$BASE_REF..HEAD" 2>/dev/null || echo 0)
+   # No branch AND no directory means the card left no artifact at all.
+   # A warning let fabricated "done" cards idle forever; this is a failure.
+  if ! git show-ref --verify -q "refs/heads/$branch"; then
+     [ -e "$wt" ] || { echo "vanished $id"; return 1; }
+  fi
+   # The honest baseline is the card's OWN fork point (oldest reflog entry of
+   # wt/<id>), never BASE_REF. The supervisor commits its own fixes to master
+   # during a run, so an old BASE_REF makes the dispatcher's empty wt/<id>
+   # stamp look like the worker's genuine "commits=1". Two cards passed audit
+   # exactly that way while producing nothing.
+  fork=$(git reflog show --format='%H' "$branch" 2>/dev/null | tail -1)
+   [ -n "$fork" ] && git cat-file -e "${fork}^{commit}" 2>/dev/null || fork="$BASE_REF"
   dirty=$(git -C "$wt" status --porcelain 2>/dev/null | grep -v '^?? ops/state' | wc -l)
-  if [ "${ahead:-0}" -gt 0 ]; then
+   # Compare TREES, not just commit counts: allow-empty means a commit can
+   # exist while every file is untouched.
+  if [ -n "$fork" ] && ! git -C "$wt" diff --quiet "$fork" HEAD -- ':!ops/state' 2>/dev/null; then
+    ahead=$(git -C "$wt" rev-list --count "$fork..HEAD" -- ':!ops/state' 2>/dev/null || echo 0)
     echo "ok $id commits=$ahead"
     return 0
   fi
-  if [ "${dirty:-0}" -gt 0 ]; then
+  if [ -e "$wt" ] && [ "${dirty:-0}" -gt 0 ]; then
     echo "uncommitted $id files=$dirty"
     return 1
   fi
-  # Clean and commitless. That is a failure UNLESS the branch is already an
-  # ancestor of master, which means the work landed on master by another route
-  # (an escape recovery, or a hand merge). Reopening those would redo finished
-  # work forever.
+   # Clean and commitless. That is a failure UNLESS the branch is already an
+   # ancestor of master, which means the work landed on master by another route
+   # (an escape recovery, or a hand merge). Reopening those would redo finished
+   # work forever.
   wt_head=$(git -C "$wt" rev-parse HEAD 2>/dev/null)
   if [ -n "$wt_head" ] && [ -n "$main_head" ] \
-     && git merge-base --is-ancestor "$wt_head" "$main_head" 2>/dev/null; then
+      && git merge-base --is-ancestor "$wt_head" "$main_head" 2>/dev/null; then
     echo "landed $id (branch is an ancestor of master)"
     return 0
   fi
