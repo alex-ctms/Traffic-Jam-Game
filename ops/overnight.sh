@@ -199,28 +199,76 @@ report_escapes() {
   done < <(done_ids)
 }
 
-reopen() {
+# A done card CANNOT be reopened: block, unblock, promote, reclaim and
+# request-changes all refuse 'done' (verified in kanban_db.py). The only
+# sound remediation is a supersede: checkpoint whatever the failed worker
+# left, mark the card with a durable audit-failure comment, and create one
+# linked retry card that continues from the checkpoint. The comment doubles
+# as the "already remediated" marker so the audit stops acting on it, and
+# the idempotency key stops repeats from creating duplicate retries.
+remediate_failed() {
   local id="$1" why="$2"
-  hermes kanban block "$id" "AUDIT FAILURE: $why" >/dev/null 2>&1
-  hermes kanban unblock "$id" >/dev/null 2>&1
-  log "REOPENED $id ($why)"
+  local wt="$ROOT/.worktrees/$id"
+  grep -q 'SUPERSEDED' <(hermes kanban show "$id" 2>/dev/null) \
+     && { log "audit leave-alone $id (already superseded)"; return 0; }
+   # 1. Checkpoint the uncommitted work onto the card's branch so a successor
+    #    can inherit it instead of starting from zero.
+  if [ -e "$wt" ] \
+      && [ -n "$(git -C "$wt" status --porcelain 2>/dev/null | grep -v '^?? ops/state')" ]; then
+    git -C "$wt" add -A >/dev/null 2>&1
+    git -C "$wt" commit -q -m "wip($id): checkpoint uncommitted after audit failure" 2>/dev/null \
+       && log "checkpointed WIP for $id on wt/$id"
+  fi
+   # 2. One retry card, only if the failed card has fewer than two retries.
+  local retries title body assignee key new
+  retries=$(for st in ready todo running blocked review triage; do
+              hermes kanban list --status "$st" 2>/dev/null
+            done | grep -c "($id retry" || true)
+  if [ "${retries:-0}" -ge 2 ]; then
+    log "audit STUCK $id: $why, already retried twice - needs a human"
+    return 0
+  fi
+  title=$(hermes kanban show "$id" --json 2>/dev/null \
+           | python3 -c 'import json,sys; print((json.load(sys.stdin).get("task") or {}).get("title",""))' 2>/dev/null)
+  body=$(hermes kanban show "$id" --json 2>/dev/null \
+          | python3 -c 'import json,sys; print((json.load(sys.stdin).get("task") or {}).get("body",""))' 2>/dev/null)
+  assignee=$(hermes kanban show "$id" --json 2>/dev/null \
+              | python3 -c 'import json,sys; print((json.load(sys.stdin).get("task") or {}).get("assignee") or "devlocal")' 2>/dev/null)
+   [ -n "$assignee" ] || assignee="devlocal"
+   [ -n "$title" ] || { log "audit FAILED to read card $id for retry - skipping"; return 0; }
+  key="$BOARD:$id:retry$((retries + 1))"
+  new=$(hermes kanban create "$title ($id retry $((retries + 1)))" \
+         --idempotency-key "$key" --priority "$WAVE_PRIORITY" --assignee "$assignee" \
+         --workspace worktree --completion-contract local-only \
+         --body "$body
+
+Supersedes $id, which the audit failed: $why
+The previous worker left a checkpoint commit on branch wt/$id
+(git log --oneline wt/$id). Inherit that work with git cherry-pick or by
+copying the files, finish it, and commit." 2>&1 | grep -oE '\bt_[0-9a-f]{8}\b' | head -1)
+  if [ -n "$new" ]; then
+    hermes kanban comment "$id" "SUPERSEDED by $new: audit failed - $why" >/dev/null 2>&1
+    log "SUPERSEDED $id ($why) -> $new"
+  else
+    hermes kanban comment "$id" "SUPERSEDED-PENDING: audit failed - $why (retry create failed)" >/dev/null 2>&1
+    log "audit could not create retry for $id ($why)"
+  fi
 }
 
 audit_done() {
   local id verdict rc
   while read -r id; do
-    [ -z "$id" ] && continue
+     [ -z "$id" ] && continue
     verdict=$(audit_one "$id"); rc=$?
     case "$rc" in
-      0) log "audit ok $id (${verdict#ok })" ;;
-      # Uncommitted work is a HARD FAILURE, not a warning. A card that edited
-      # files and never committed produces nothing anyone else can see, and
-      # leaving it `done` means the next agent builds on a gap. Two cards sat
-      # in exactly this state for hours while the board reported them finished.
-      1) reopen "$id" "${verdict#uncommitted }" ;;
-      2) case "$verdict" in
-           no-worktree*) log "audit WARN $id (no worktree on disk)" ;;
-           *) reopen "$id" "marked done but worktree is clean and commitless" ;;
+       0) log "audit ok $id (${verdict#ok })" ;;
+        # Uncommitted work is a HARD FAILURE, not a warning. A card that edited
+        # files and never committed produces nothing anyone else can see, and
+        # leaving it `done` means the next agent builds on a gap.
+       1) remediate_failed "$id" "${verdict#uncommitted }" ;;
+       2) case "$verdict" in
+           vanished*|no-worktree*) remediate_failed "$id" "marked done, no branch or worktree anywhere" ;;
+            *) remediate_failed "$id" "marked done but worktree is clean and commitless" ;;
          esac ;;
     esac
   done < <(done_ids)
