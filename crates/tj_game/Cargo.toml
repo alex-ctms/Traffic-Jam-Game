@@ -1,0 +1,9 @@
+[package]
+name = "tj_game"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tj_core = { path = "../tj_core" }
+tj_city = { path = "../tj_city" }
+bevy = "0.13"

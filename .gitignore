@@ -1,0 +1,11 @@
+# Rust build artifacts
+/target
+**/*.rs.bk
+
+# Accidental artifact from a mistyped shell redirect (contains "//  ...  ")
+/...
+
+# Agent orchestration state
+.hermes/
+.worktrees/
+/ops/state/

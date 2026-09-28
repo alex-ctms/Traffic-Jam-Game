@@ -1,0 +1,14 @@
+[workspace]
+members = [
+    "crates/tj_core",
+    "crates/tj_network",
+    "crates/tj_population",
+    "crates/tj_demand",
+    "crates/tj_routing",
+    "crates/tj_traffic",
+    "crates/tj_city",
+    "crates/tj_ops",
+    "crates/tj_analytics",
+    "crates/tj_save",
+    "crates/tj_game",
+]
