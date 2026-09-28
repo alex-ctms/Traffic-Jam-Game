@@ -171,12 +171,36 @@ audit_one() {
 # main checkout is therefore a hard signal, not a warning, because the next
 # commit from anywhere can sweep the corruption into history.
 report_main_dirty() {
-  local dirty
+  local dirty f stamp dir
   dirty=$(git status --porcelain 2>/dev/null | grep -v '^?? ops/state' | grep -v '^?? \.ops/')
   if [ -n "$dirty" ]; then
     log "MAIN DIRTY - an agent is writing to the main checkout, not its worktree:"
     printf '%s\n' "$dirty" | head -8 | while read -r l; do log "    $l"; done
-    log "    capture these files, then git checkout -- . and remove stray untracked files"
+      # Unattended rescue: snapshot EVERYTHING (tracked diff plus untracked
+      # files) into ops/state/leaks, then restore the checkout. The supervisor
+       # commits to master itself, so a stray worker edit risks being swept
+       # into history by the next commit. Nothing is lost: the patch is kept
+       # and the file list is logged so it can be merged into its worktree.
+    mkdir -p "$STATE/leaks"
+    local stamp dir
+    stamp=$(date +%Y%m%d-%H%M%S)
+    dir="$STATE/leaks/$stamp"
+    mkdir -p "$dir"
+    {
+      git diff -- . ':(exclude)ops/state' ':(exclude).ops'
+     } > "$dir/tracked.patch" 2>/dev/null
+     # Copy leaked files preserving their relative paths so recovery is a
+      # plain copy back, no patch-format guessing.
+    local f
+    while read -r f; do
+      [ -f "$f" ] || continue
+      mkdir -p "$dir/$(dirname "$f")"
+      cp -p "$f" "$dir/$f"
+    done < <(git ls-files --others --exclude-standard | grep -vE '^ops/state/|^\.ops/')
+    git diff --name-only -- . ':(exclude)ops/state' ':(exclude).ops' > "$dir/modified.txt" 2>/dev/null
+    git checkout -- . 2>/dev/null
+    git clean -fdq -- . ':(exclude)ops/state' ':(exclude).ops' 2>/dev/null
+    log "    captured leak to ${dir#$ROOT/} and restored the checkout"
     return 1
   fi
   return 0
