@@ -104,6 +104,24 @@ audit_one() {
 # Flag cards whose work landed on master while their worktree branch never moved.
 # Not auto-reverted: the work is real and may be wanted. Surfaced loudly so a
 # human decides, because a committed-to-master agent can collide with others.
+# Detect an agent writing into the MAIN checkout instead of its worktree. This is
+# the failure that actually happened: a running devlocal worker created
+# crates/tj_core/src/id.rs in the main checkout, producing a half-written
+# duplicate of a file its own worktree already had a fuller version of. A dirty
+# main checkout is therefore a hard signal, not a warning, because the next
+# commit from anywhere can sweep the corruption into history.
+report_main_dirty() {
+  local dirty
+  dirty=$(git status --porcelain 2>/dev/null | grep -v '^?? ops/state' | grep -v '^?? \.ops/')
+  if [ -n "$dirty" ]; then
+    log "MAIN DIRTY - an agent is writing to the main checkout, not its worktree:"
+    printf '%s\n' "$dirty" | head -8 | while read -r l; do log "    $l"; done
+    log "    capture these files, then git checkout -- . and remove stray untracked files"
+    return 1
+  fi
+  return 0
+}
+
 report_escapes() {
   local id ahead main_head wt_head
   main_head=$(git rev-parse HEAD 2>/dev/null)
@@ -175,6 +193,7 @@ while :; do
 
   audit_done
   report_escapes
+  report_main_dirty || log "main checkout is dirty; investigate before the next tick"
 
   read -r _ _ READY2 RUNNING2 _ DONE2 < <(board_counts)
   if [ "${RUNNING2:-0}" -eq 0 ] && [ "${READY2:-0}" -eq 0 ]; then
