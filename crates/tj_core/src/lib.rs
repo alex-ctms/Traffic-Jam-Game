@@ -11,5 +11,7 @@ pub struct Config {
 }
 
 pub fn default_config() -> Config {
-    Config { simulation_speed: 1.0 }
+    Config {
+        simulation_speed: 1.0,
+    }
 }
