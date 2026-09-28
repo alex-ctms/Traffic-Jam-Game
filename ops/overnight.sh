@@ -95,15 +95,19 @@ done_ids() {
 # fires. An unassigned card consumes no worker slot and will never be claimed,
 # so it must not count as runnable work.
 runnable_ready() {
+  # kanban list columns are: <marker> <task_id> <status> <assignee> <priority> <title>
+  # The marker is a glyph (done is a check mark), so the id is not always $1.
+  # Locate the id by pattern, then take the next two fields as status+assignee.
   hermes kanban list 2>/dev/null | awk '
-    $2 == "ready" {
-      assigned = 0
-      for (i = 3; i <= NF; i++) {
-        if ($i ~ /^t_[0-9a-f]{8}$/) continue
-        if ($i == "(unassigned)") { unassigned = 1 }
-        else if ($i !~ /^\(/) { assigned = 1 }
+    {
+      for (i = 1; i <= NF; i++) {
+        if ($i ~ /^t_[0-9a-f]{8}$/) { id = i; break }
       }
-      if (assigned && !unassigned) n++
+      if (!id) next
+      status = $(id + 1)
+      assignee = $(id + 2)
+      if (status == "ready" && assignee != "(unassigned)" && assignee != "-") n++
+      id = 0
     }
     END { print n + 0 }
   '
