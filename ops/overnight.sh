@@ -118,7 +118,8 @@ runnable_ready() {
 audit_one() {
   local id="$1" wt="$ROOT/.worktrees/$id"
   [ -d "$wt/.git" ] || [ -f "$wt/.git" ] || { echo "no-worktree $id"; return 2; }
-  local ahead dirty
+  local ahead dirty wt_head main_head
+  main_head=$(git rev-parse HEAD 2>/dev/null)
   ahead=$(git -C "$wt" rev-list --count "$BASE_REF..HEAD" 2>/dev/null || echo 0)
   dirty=$(git -C "$wt" status --porcelain 2>/dev/null | grep -v '^?? ops/state' | wc -l)
   if [ "${ahead:-0}" -gt 0 ]; then
@@ -128,6 +129,16 @@ audit_one() {
   if [ "${dirty:-0}" -gt 0 ]; then
     echo "uncommitted $id files=$dirty"
     return 1
+  fi
+  # Clean and commitless. That is a failure UNLESS the branch is already an
+  # ancestor of master, which means the work landed on master by another route
+  # (an escape recovery, or a hand merge). Reopening those would redo finished
+  # work forever.
+  wt_head=$(git -C "$wt" rev-parse HEAD 2>/dev/null)
+  if [ -n "$wt_head" ] && [ -n "$main_head" ] \
+     && git merge-base --is-ancestor "$wt_head" "$main_head" 2>/dev/null; then
+    echo "landed $id (branch is an ancestor of master)"
+    return 0
   fi
   echo "empty $id"
   return 2
