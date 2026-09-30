@@ -7,6 +7,7 @@ members = [
     "crates/tj_demand",
     "crates/tj_routing",
     "crates/tj_traffic",
+    "crates/tj_traffic_signal_integration",
     "crates/tj_city",
     "crates/tj_ops",
     "crates/tj_analytics",

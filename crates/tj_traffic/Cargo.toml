@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 tj_core = { path = "../tj_core" }
+tj_network = { path = "../tj_network" }
