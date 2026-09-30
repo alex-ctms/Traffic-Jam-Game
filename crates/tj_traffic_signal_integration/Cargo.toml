@@ -1,0 +1,8 @@
+[package]
+name = "tj_traffic_signal_integration"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tj_network = { path = "../tj_network" }
+tj_traffic = { path = "../tj_traffic" }

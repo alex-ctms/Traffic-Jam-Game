@@ -3368,6 +3368,15 @@ name = "tj_traffic"
 version = "0.1.0"
 dependencies = [
  "tj_core",
+ "tj_network",
+]
+
+[[package]]
+name = "tj_traffic_signal_integration"
+version = "0.1.0"
+dependencies = [
+ "tj_network",
+ "tj_traffic",
 ]
 
 [[package]]
