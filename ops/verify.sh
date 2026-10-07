@@ -47,6 +47,9 @@ if [ "$quick" = false ]; then
     run_and_check "cargo clippy --workspace --all-targets --all-features -- -D warnings" "cargo clippy"
 fi
 
+# Fixed-rate simulation must produce the same ticks for different frame schedules.
+run_and_check "cargo test -p tj_core fixed_ticks_are_independent_of_frame_partitioning" "fixed-tick frame independence test"
+
 # Step 3: cargo test --workspace
 run_and_check "cargo test --workspace" "cargo test"
 
@@ -55,6 +58,9 @@ run_and_check "cargo test -p tj_analytics monthly_report_tests" "monthly traffic
 
 # Explicit regression gate for per-tick lane segment congestion aggregation.
 run_and_check "cargo test -p tj_analytics lane_segment_heatmap_aggregates_both_directions_for_each_tick" "lane segment heatmap aggregation test"
+
+# Explicit regression gate for staged planning edits and approval.
+run_and_check "cargo test -p tj_network planning::tests" "planning overlay regression tests"
 
 # Explicit regression gate for the headless demand-generation integration test.
 run_and_check "cargo test -p tj_game --test headless_simulation" "headless simulation integration test"

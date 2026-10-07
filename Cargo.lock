@@ -3327,6 +3327,7 @@ name = "tj_game"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "tj_analytics",
  "tj_city",
  "tj_core",
  "tj_network",
