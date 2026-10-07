@@ -5,6 +5,7 @@
 // mismatch is silent until compile time.
 
 use bevy::prelude::*;
+use tj_analytics::HeatmapData;
 use tj_network::{LaneGraph, ZoneType};
 use tj_population::PopulationStats;
 
@@ -15,6 +16,89 @@ pub struct CityPopulation(pub PopulationStats);
 /// Road graph available to developer console commands.
 #[derive(Resource, Default)]
 pub struct RoadNetwork(pub LaneGraph);
+
+/// Heatmap shown by the congestion overlay. Set `data` from current simulation
+/// analytics and toggle `visible` from the frontend to show or hide it.
+#[derive(Resource, Default)]
+pub struct CongestionHeatmapOverlay {
+    pub data: Option<HeatmapData>,
+    pub visible: bool,
+}
+
+#[derive(Component)]
+struct CongestionHeatmapCell;
+
+/// Renders analytics heatmap cells as translucent colored sprites.
+pub struct CongestionHeatmapOverlayPlugin;
+
+impl Plugin for CongestionHeatmapOverlayPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<CongestionHeatmapOverlay>()
+            .add_systems(Update, update_congestion_heatmap_overlay);
+    }
+}
+
+fn update_congestion_heatmap_overlay(
+    mut commands: Commands,
+    overlay: Res<CongestionHeatmapOverlay>,
+    cells: Query<Entity, With<CongestionHeatmapCell>>,
+) {
+    if !overlay.is_changed() {
+        return;
+    }
+
+    for entity in &cells {
+        commands.entity(entity).despawn();
+    }
+
+    let Some(heatmap) = overlay.data.as_ref().filter(|_| overlay.visible) else {
+        return;
+    };
+    let max_density = heatmap.data.iter().copied().max().unwrap_or(0);
+    if max_density == 0 || heatmap.cell_size <= 0.0 {
+        return;
+    }
+
+    for y in 0..heatmap.height {
+        for x in 0..heatmap.width {
+            let density = heatmap.get_density(x, y);
+            if density == 0 {
+                continue;
+            }
+            let intensity = density as f32 / max_density as f32;
+            let color = congestion_heat_color(intensity);
+            commands.spawn((
+                SpriteBundle {
+                    sprite: Sprite {
+                        color,
+                        custom_size: Some(Vec2::splat(heatmap.cell_size)),
+                        ..default()
+                    },
+                    transform: Transform::from_xyz(
+                        (x as f32 + 0.5) * heatmap.cell_size,
+                        (y as f32 + 0.5) * heatmap.cell_size,
+                        10.0,
+                    ),
+                    ..default()
+                },
+                CongestionHeatmapCell,
+            ));
+        }
+    }
+}
+
+/// Maps normalized congestion to a blue → yellow → red translucent gradient.
+fn congestion_heat_color(intensity: f32) -> Color {
+    let t = intensity.clamp(0.0, 1.0);
+    let (r, g, b) = if t < 0.5 {
+        let blend = t * 2.0;
+        (blend, 0.35 + 0.55 * blend, 1.0 - blend)
+    } else {
+        let blend = (t - 0.5) * 2.0;
+        (1.0, 0.9 * (1.0 - blend), 0.0)
+    };
+    Color::rgba(r, g, b, 0.55)
+}
 
 /// Run a developer console command against the current city state.
 ///
@@ -113,6 +197,7 @@ fn generate_and_queue_trip(mut queue: ResMut<TripQueue>) {
 pub fn run() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins(CongestionHeatmapOverlayPlugin)
         .add_systems(Startup, setup)
         .run();
 }
@@ -218,5 +303,43 @@ mod console_tests {
             .expect("route should reflect the approved connection");
         traffic.tick();
         assert_eq!(traffic.vehicle(vehicle_id).unwrap().lane_id, second_lane);
+    }
+
+    #[test]
+    fn congestion_overlay_renders_density_cells_and_hides_on_toggle() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins)
+            .add_plugins(CongestionHeatmapOverlayPlugin);
+        app.update();
+
+        let mut heatmap = HeatmapData::new(20.0, 2, 1);
+        heatmap.set_density(0, 0, 1);
+        heatmap.set_density(1, 0, 4);
+        {
+            let mut overlay = app.world.resource_mut::<CongestionHeatmapOverlay>();
+            overlay.data = Some(heatmap);
+            overlay.visible = true;
+        }
+        app.update();
+
+        let rendered: Vec<_> = app
+            .world
+            .query_filtered::<(&Sprite, &Transform), With<CongestionHeatmapCell>>()
+            .iter(&app.world)
+            .collect();
+        assert_eq!(rendered.len(), 2);
+        assert_eq!(rendered[0].0.custom_size, Some(Vec2::splat(20.0)));
+        assert_eq!(rendered[1].1.translation.x, 30.0);
+        assert_ne!(rendered[0].0.color, rendered[1].0.color);
+
+        app.world.resource_mut::<CongestionHeatmapOverlay>().visible = false;
+        app.update();
+        assert_eq!(
+            app.world
+                .query_filtered::<Entity, With<CongestionHeatmapCell>>()
+                .iter(&app.world)
+                .count(),
+            0
+        );
     }
 }
