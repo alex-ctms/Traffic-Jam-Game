@@ -86,6 +86,151 @@ fn generate_and_queue_trip(mut queue: ResMut<TripQueue>) {
     queue.generated += 1;
 }
 
+/// The three numeric metrics the plan comparison side-panel contrasts.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PlanMetrics {
+    /// Average commute across the city in minutes.
+    pub average_commute_minutes: f32,
+    /// Citywide congestion level as a percentage (0-100).
+    pub congestion_percent: f32,
+    /// Cost in dollars.
+    pub cost_dollars: i64,
+}
+
+/// State backing the plan comparison side-panel. Populated when a plan is
+/// applied; the panel stays hidden until both sides of the comparison exist.
+#[derive(Resource, Clone, Debug, Default)]
+pub struct PlanComparisonState {
+    pub baseline: Option<PlanMetrics>,
+    pub projected: Option<PlanMetrics>,
+}
+
+impl PlanComparisonState {
+    /// Capture the current metrics and the projection when a plan is applied.
+    pub fn record_plan_application(&mut self, current: PlanMetrics, projected: PlanMetrics) {
+        self.baseline = Some(current);
+        self.projected = Some(projected);
+    }
+}
+
+/// Build the panel lines: one per metric, showing current vs projected with
+/// the signed delta. Positive deltas are increases, negative are reductions.
+pub fn format_comparison(current: PlanMetrics, projected: PlanMetrics) -> Vec<String> {
+    vec![
+        format!(
+            "Avg commute: {:.1} -> {:.1} min ({:+.1})",
+            current.average_commute_minutes,
+            projected.average_commute_minutes,
+            projected.average_commute_minutes - current.average_commute_minutes
+        ),
+        format!(
+            "Congestion: {:.1}% -> {:.1}% ({:+.1})",
+            current.congestion_percent,
+            projected.congestion_percent,
+            projected.congestion_percent - current.congestion_percent
+        ),
+        format!(
+            "Cost: ${} -> ${} ({:+})",
+            current.cost_dollars,
+            projected.cost_dollars,
+            projected.cost_dollars - current.cost_dollars
+        ),
+    ]
+}
+
+#[derive(Component)]
+pub struct ComparisonPanel;
+
+/// Marks one metric line inside the comparison panel; the index selects
+/// which formatted line (commute, congestion, cost) fills its text.
+#[derive(Component)]
+pub struct ComparisonMetricLine(pub usize);
+
+/// Side-panel UI (docked right) contrasting current vs projected metrics
+/// after a plan is applied. Other systems fill PlanComparisonState on
+/// approval; this plugin only renders it.
+pub struct PlanComparisonPanelPlugin;
+
+impl Plugin for PlanComparisonPanelPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<PlanComparisonState>()
+            .add_systems(Startup, spawn_comparison_panel)
+            .add_systems(Update, sync_comparison_panel);
+    }
+}
+
+fn spawn_comparison_panel(mut commands: Commands) {
+    commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    right: Val::Px(16.0),
+                    top: Val::Px(104.0),
+                    width: Val::Px(260.0),
+                    flex_direction: FlexDirection::Column,
+                    row_gap: Val::Px(4.0),
+                    padding: UiRect::all(Val::Px(12.0)),
+                    display: Display::None,
+                    ..default()
+                },
+                background_color: BackgroundColor(Color::rgb(0.08, 0.10, 0.14)),
+                ..default()
+            },
+            ComparisonPanel,
+        ))
+        .with_children(|panel| {
+            panel.spawn(TextBundle::from_section(
+                "Plan impact",
+                TextStyle {
+                    font_size: 18.0,
+                    color: Color::WHITE,
+                    ..default()
+                },
+            ));
+            for index in 0..3 {
+                panel.spawn((
+                    TextBundle::from_section(
+                        "",
+                        TextStyle {
+                            font_size: 14.0,
+                            color: Color::rgb(0.8, 0.85, 0.9),
+                            ..default()
+                        },
+                    ),
+                    ComparisonMetricLine(index),
+                ));
+            }
+        });
+}
+
+fn sync_comparison_panel(
+    comparison: Res<PlanComparisonState>,
+    mut panel: Query<&mut Style, With<ComparisonPanel>>,
+    mut lines: Query<(&ComparisonMetricLine, &mut Text), With<ComparisonMetricLine>>,
+) {
+    let visible = matches!(
+        (comparison.baseline, comparison.projected),
+        (Some(_), Some(_))
+    );
+    for mut style in &mut panel {
+        style.display = if visible {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
+    if !visible {
+        return;
+    }
+    let current = comparison.baseline.unwrap();
+    let projected = comparison.projected.unwrap();
+    let formatted = format_comparison(current, projected);
+    for (line, mut text) in &mut lines {
+        text.sections[0].value = formatted[line.0].clone();
+    }
+}
+
 pub fn run() {
     App::new()
         .add_plugins(DefaultPlugins)
