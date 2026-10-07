@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 tj_core = { path = "../tj_core" }
 tj_city = { path = "../tj_city" }
+tj_population = { path = "../tj_population" }
 bevy = "0.13"
