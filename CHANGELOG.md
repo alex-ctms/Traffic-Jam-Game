@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M1.2 (backend): Implement a `LaneSegment` struct and `LaneGraph` that supports adding and removing road segments while maintaining a reliable adjacency list — t_57046b7f
 - M1.1 (backend): Add a fixed‑time simulation tick system that steps simulation logic at a constant rate regardless of frame rendering — t_c5d291a5
 - Added lane segment records and lane-ID adjacency tracking to the network graph, including segment removal.
 - Added road-segment zone assignment and lookup for residential, commercial, office, industrial, and farm designations.
