@@ -2,6 +2,8 @@
 
 use std::collections::{HashMap, HashSet};
 
+pub mod planning;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Direction {
     Forward,
@@ -85,7 +87,7 @@ impl LaneSegment {
 }
 
 /// Lane graph connects lanes with adjacency information to maintain connectivity from intersection topology
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct LaneGraph {
     // Mapping from Road ID to its lanes (in both directions)
     pub road_lanes: HashMap<u32, Vec<Lane>>,
