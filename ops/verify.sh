@@ -50,6 +50,9 @@ fi
 # Step 3: cargo test --workspace
 run_and_check "cargo test --workspace" "cargo test"
 
+# Explicit regression gate for the monthly traffic report JSON layout.
+run_and_check "cargo test -p tj_analytics monthly_report_tests" "monthly traffic report layout test"
+
 # Explicit regression gate for the headless demand-generation integration test.
 run_and_check "cargo test -p tj_game --test headless_simulation" "headless simulation integration test"
 

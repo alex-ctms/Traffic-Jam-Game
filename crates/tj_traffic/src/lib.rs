@@ -149,6 +149,11 @@ impl TrafficSimulation {
         self.vehicles.iter().find(|vehicle| vehicle.id == id)
     }
 
+    /// Returns a read-only view of the vehicles currently in the simulation.
+    pub fn vehicles(&self) -> &[Vehicle] {
+        &self.vehicles
+    }
+
     pub fn tick(&mut self) {
         self.tick_with_instructions(&HashMap::new());
     }

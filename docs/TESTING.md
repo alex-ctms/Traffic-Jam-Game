@@ -11,6 +11,12 @@
 # Unit & property tests (fast)
 cargo test --workspace --lib
 
+# Monthly traffic report JSON layout and disk writer
+cargo test -p tj_analytics monthly_report_tests
+
+# Full verification gate (includes the monthly report check)
+ops/verify.sh
+
 # Integration tests (require X11 offscreen – use `bevy_headless` flag)
 cargo test --workspace --test integration
 
