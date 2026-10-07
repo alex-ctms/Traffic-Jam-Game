@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M6.1 (backend): Implement a planning mode that overlays proposed road edits on top of the current network without modifying live data until approval — t_397a67a4. The implementation correctly provides a planning mode that overlays edits on the live network without affecting live data until an explicit approval step, and it includes automated tests that verify t
 - M5.4 (frontend): Add a frontend overlay that visualizes the congestion heatmap with color gradients — t_0b814f0b. Implementation adds a CongestionHeatmapOverlay component, plugin, and rendering system that visualizes congestion with a blue‑yellow‑red gradient, and includes a targeted test confirming cell renderin
 - M1.3 (testing): Write unit tests that assert there are no duplicate edges and that the graph remains connected after each add/remove operation — t_e939ee0e
 - M5.1 (backend): Generate a congestion heatmap by aggregating the density of vehicles per lane segment each tick — t_e947965f. The changes implement per‑tick lane‑segment congestion aggregation and provide a unit test plus verify.sh entry that pass.
