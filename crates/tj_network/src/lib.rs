@@ -8,6 +8,16 @@ pub enum Direction {
     Backward,
 }
 
+/// Land-use designation for the frontage of a road segment.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ZoneType {
+    Residential,
+    Commercial,
+    Office,
+    Industrial,
+    Farm,
+}
+
 impl Direction {
     pub fn opposite(&self) -> Self {
         match self {
@@ -57,6 +67,8 @@ pub struct LaneSegment {
     pub start_id: u32,
     pub end_id: u32,
     pub length: f32,
+    /// Current land-use designation, or `None` while the frontage is unzoned.
+    pub zone: Option<ZoneType>,
 }
 
 impl LaneSegment {
@@ -67,6 +79,7 @@ impl LaneSegment {
             start_id,
             end_id,
             length,
+            zone: None,
         }
     }
 }
@@ -219,6 +232,29 @@ impl LaneGraph {
 
     pub fn get_segments(&self, road_id: u32) -> Option<&[LaneSegment]> {
         self.road_segments.get(&road_id).map(Vec::as_slice)
+    }
+
+    /// Assign a land-use designation to a segment on `road_id`.
+    /// Returns false when the road or segment does not exist.
+    pub fn assign_zone(&mut self, road_id: u32, segment_id: u64, zone: ZoneType) -> bool {
+        let Some(segment) = self
+            .road_segments
+            .get_mut(&road_id)
+            .and_then(|segments| segments.iter_mut().find(|segment| segment.id == segment_id))
+        else {
+            return false;
+        };
+        segment.zone = Some(zone);
+        true
+    }
+
+    /// Get a segment's current designation. `None` means unknown or unzoned.
+    pub fn get_zone(&self, road_id: u32, segment_id: u64) -> Option<ZoneType> {
+        self.road_segments
+            .get(&road_id)?
+            .iter()
+            .find(|segment| segment.id == segment_id)?
+            .zone
     }
 
     pub fn get_lane_ids_at_intersection(&self, intersection_id: u32) -> Option<&HashSet<u64>> {
@@ -425,5 +461,29 @@ mod tests {
         assert!(graph.remove_segment(second));
         assert!(graph.get_lane_ids_at_intersection(1).is_none());
         assert!(graph.check_invariants());
+    }
+
+    #[test]
+    fn segment_zone_can_be_assigned_changed_and_retrieved() {
+        let mut graph = LaneGraph::new();
+        let road_id = graph.add_road(vec![(1, 2, 10.0), (2, 3, 12.0)]).unwrap();
+        let segments = graph.get_segments(road_id).unwrap();
+        let first_segment = segments[0].id;
+        let second_segment = segments[1].id;
+
+        assert_eq!(graph.get_zone(road_id, first_segment), None);
+        assert!(graph.assign_zone(road_id, first_segment, ZoneType::Residential));
+        assert_eq!(
+            graph.get_zone(road_id, first_segment),
+            Some(ZoneType::Residential)
+        );
+        assert!(graph.assign_zone(road_id, first_segment, ZoneType::Commercial));
+        assert_eq!(
+            graph.get_zone(road_id, first_segment),
+            Some(ZoneType::Commercial)
+        );
+        assert_eq!(graph.get_zone(road_id, second_segment), None);
+        assert!(!graph.assign_zone(road_id, u64::MAX, ZoneType::Industrial));
+        assert!(!graph.assign_zone(u32::MAX, first_segment, ZoneType::Industrial));
     }
 }
