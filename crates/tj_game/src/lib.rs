@@ -5,11 +5,16 @@
 // mismatch is silent until compile time.
 
 use bevy::prelude::*;
+use tj_network::{LaneGraph, ZoneType};
 use tj_population::PopulationStats;
 
 /// Aggregate counts available to developer console commands.
 #[derive(Resource, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct CityPopulation(pub PopulationStats);
+
+/// Road graph available to developer console commands.
+#[derive(Resource, Default)]
+pub struct RoadNetwork(pub LaneGraph);
 
 /// Run a developer console command against the current city state.
 ///
@@ -21,12 +26,24 @@ pub fn run_console_command(command: &str, population: PopulationStats) -> Option
     }
 }
 
+/// Create a two-point sample road and zone its frontage residential.
+///
+/// Returns the allocated road ID, or `None` if the graph cannot allocate a road.
+pub fn create_default_residential_road(network: &mut LaneGraph) -> Option<u32> {
+    let road_id = network.add_segment(1, 2, 10.0)?;
+    let segment_id = network.get_segments(road_id)?.first()?.id;
+    network
+        .assign_zone(road_id, segment_id, ZoneType::Residential)
+        .then_some(road_id)
+}
+
 /// Register the population stats command with a Bevy app.
 pub struct PopulationConsolePlugin;
 
 impl Plugin for PopulationConsolePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<CityPopulation>()
+            .init_resource::<RoadNetwork>()
             .init_resource::<ConsoleCommands>()
             .init_resource::<ConsoleOutput>()
             .add_systems(Update, process_console_commands);
@@ -109,10 +126,17 @@ fn update_moving_vehicle_count(
 fn process_console_commands(
     mut commands: ResMut<ConsoleCommands>,
     population: Res<CityPopulation>,
+    mut network: ResMut<RoadNetwork>,
     mut output: ResMut<ConsoleOutput>,
 ) {
     for command in commands.0.drain(..) {
         if let Some(result) = run_console_command(&command, population.0) {
+            println!("{result}");
+            output.0.push(result);
+        } else if command.trim() == "/create_road" {
+            let result = create_default_residential_road(&mut network.0)
+                .map(|id| format!("Created residential road {id} from point 1 to point 2"))
+                .unwrap_or_else(|| "Failed to create residential road".to_string());
             println!("{result}");
             output.0.push(result);
         }
@@ -186,6 +210,79 @@ mod console_tests {
             app.world.resource::<ConsoleOutput>().0,
             ["Population: 1250\nJobs: 840"]
         );
+    }
+
+    #[test]
+    fn create_road_command_adds_two_point_residential_road() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins)
+            .add_plugins(PopulationConsolePlugin);
+        app.world
+            .resource_mut::<ConsoleCommands>()
+            .0
+            .push("/create_road".to_string());
+
+        app.update();
+
+        let network = &app.world.resource::<RoadNetwork>().0;
+        assert_eq!(network.num_roads(), 1);
+        let segments = network.get_segments(0).expect("created road should exist");
+        assert_eq!(segments.len(), 1);
+        assert_eq!((segments[0].start_id, segments[0].end_id), (1, 2));
+        assert_eq!(segments[0].length, 10.0);
+        assert_eq!(segments[0].zone, Some(ZoneType::Residential));
+        assert!(app.world.resource::<ConsoleOutput>().0[0].contains("residential road 0"));
+    }
+
+    #[test]
+    fn approving_network_change_updates_zones_and_traffic_path() {
+        let mut network = LaneGraph::new();
+        let existing_road = network.add_segment(1, 2, 5.0).unwrap();
+        network.assign_zone(
+            existing_road,
+            network.get_segments(existing_road).unwrap()[0].id,
+            ZoneType::Residential,
+        );
+
+        // A planned extension is kept separate until approval.
+        let planned_road = (2, 3, 5.0);
+        assert!(network.get_lanes_at_intersection(3).is_none());
+
+        // Approval applies the road and its frontage zoning to the live graph.
+        let approved_road = network
+            .add_segment(planned_road.0, planned_road.1, planned_road.2)
+            .expect("approved road should be added");
+        let segment_id = network.get_segments(approved_road).unwrap()[0].id;
+        assert!(network.assign_zone(approved_road, segment_id, ZoneType::Commercial));
+
+        assert_eq!(network.num_roads(), 2);
+        assert_eq!(
+            network.get_zone(approved_road, segment_id),
+            Some(ZoneType::Commercial)
+        );
+        assert!(network.get_lanes_at_intersection(3).is_some());
+        assert!(network.check_invariants());
+
+        let first_lane = network
+            .get_road_lanes(existing_road)
+            .unwrap()
+            .iter()
+            .find(|lane| lane.start_id == 1 && lane.end_id == 2)
+            .unwrap()
+            .id;
+        let second_lane = network
+            .get_road_lanes(approved_road)
+            .unwrap()
+            .iter()
+            .find(|lane| lane.start_id == 2 && lane.end_id == 3)
+            .unwrap()
+            .id;
+        let mut traffic = tj_traffic::TrafficSimulation::new(network);
+        let vehicle_id = traffic
+            .spawn_vehicle_on_route(&[first_lane, second_lane], 5.0)
+            .expect("route should reflect the approved connection");
+        traffic.tick();
+        assert_eq!(traffic.vehicle(vehicle_id).unwrap().lane_id, second_lane);
     }
 }
 

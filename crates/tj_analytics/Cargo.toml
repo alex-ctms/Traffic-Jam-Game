@@ -5,3 +5,7 @@ edition = "2021"
 
 [dependencies]
 tj_core = { path = "../tj_core" }
+tj_network = { path = "../tj_network" }
+tj_traffic = { path = "../tj_traffic" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -7,4 +7,8 @@ edition = "2021"
 tj_core = { path = "../tj_core" }
 tj_city = { path = "../tj_city" }
 tj_population = { path = "../tj_population" }
+tj_network = { path = "../tj_network" }
 bevy = "0.13"
+
+[dev-dependencies]
+tj_traffic = { path = "../tj_traffic" }
