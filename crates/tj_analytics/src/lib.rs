@@ -85,6 +85,73 @@ pub struct HeatmapData {
     pub data: Vec<u32>,
 }
 
+/// Vehicle density on one physical road segment for a single simulation tick.
+/// Vehicles travelling in either direction contribute to the same segment.
+#[derive(Debug, Clone, PartialEq)]
+pub struct LaneSegmentDensity {
+    pub road_id: u32,
+    pub segment_id: u64,
+    pub start_id: u32,
+    pub end_id: u32,
+    pub vehicle_count: u32,
+    /// Vehicles per kilometer; zero for a zero-length segment.
+    pub vehicles_per_kilometer: f32,
+}
+
+/// A point-in-time congestion heatmap keyed by physical lane segment.
+#[derive(Debug, Clone, PartialEq)]
+pub struct LaneSegmentHeatmap {
+    pub tick: u64,
+    pub segments: Vec<LaneSegmentDensity>,
+}
+
+/// Aggregate current vehicle locations into physical road segments.
+///
+/// Call once after each simulation tick to retain a per-tick heatmap snapshot.
+/// Segments without vehicles are included with zero density so callers can render
+/// the complete road network consistently.
+pub fn generate_lane_segment_heatmap(simulation: &TrafficSimulation) -> LaneSegmentHeatmap {
+    let mut segments = Vec::new();
+    for (road_id, road_segments) in &simulation.network.road_segments {
+        for segment in road_segments {
+            let vehicle_count = simulation
+                .vehicles()
+                .iter()
+                .filter(|vehicle| {
+                    simulation
+                        .network
+                        .get_lane_by_id(vehicle.lane_id)
+                        .is_some_and(|lane| {
+                            lane.road_id == *road_id
+                                && ((lane.start_id == segment.start_id
+                                    && lane.end_id == segment.end_id)
+                                    || (lane.start_id == segment.end_id
+                                        && lane.end_id == segment.start_id))
+                        })
+                })
+                .count() as u32;
+            let vehicles_per_kilometer = if segment.length > 0.0 {
+                vehicle_count as f32 * 1000.0 / segment.length
+            } else {
+                0.0
+            };
+            segments.push(LaneSegmentDensity {
+                road_id: *road_id,
+                segment_id: segment.id,
+                start_id: segment.start_id,
+                end_id: segment.end_id,
+                vehicle_count,
+                vehicles_per_kilometer,
+            });
+        }
+    }
+    segments.sort_by_key(|segment| (segment.road_id, segment.segment_id));
+    LaneSegmentHeatmap {
+        tick: simulation.tick_count(),
+        segments,
+    }
+}
+
 impl HeatmapData {
     /// Creates a new heatmap with specified dimensions
     pub fn new(cell_size: f32, width: usize, height: usize) -> Self {
@@ -284,6 +351,29 @@ mod tests {
         assert_eq!(heatmap.cell_size, 5.0);
         assert_eq!(heatmap.width, 1);
         assert_eq!(heatmap.height, 1);
+    }
+
+    #[test]
+    fn lane_segment_heatmap_aggregates_both_directions_for_each_tick() {
+        let mut network = LaneGraph::new();
+        let road_id = network.add_segment(10, 20, 500.0).unwrap();
+        let lanes = network.get_road_lanes(road_id).unwrap();
+        let forward_lane = lanes[0].id;
+        let backward_lane = lanes[1].id;
+        let mut simulation = TrafficSimulation::new(network);
+        simulation.spawn_vehicle(forward_lane, 1.0).unwrap();
+        simulation.spawn_vehicle(backward_lane, 1.0).unwrap();
+
+        let first_tick = generate_lane_segment_heatmap(&simulation);
+        assert_eq!(first_tick.tick, 0);
+        assert_eq!(first_tick.segments.len(), 1);
+        assert_eq!(first_tick.segments[0].vehicle_count, 2);
+        assert_eq!(first_tick.segments[0].vehicles_per_kilometer, 4.0);
+
+        simulation.tick();
+        let next_tick = generate_lane_segment_heatmap(&simulation);
+        assert_eq!(next_tick.tick, 1);
+        assert_eq!(next_tick.segments[0].vehicle_count, 2);
     }
 }
 

@@ -53,6 +53,9 @@ run_and_check "cargo test --workspace" "cargo test"
 # Explicit regression gate for the monthly traffic report JSON layout.
 run_and_check "cargo test -p tj_analytics monthly_report_tests" "monthly traffic report layout test"
 
+# Explicit regression gate for per-tick lane segment congestion aggregation.
+run_and_check "cargo test -p tj_analytics lane_segment_heatmap_aggregates_both_directions_for_each_tick" "lane segment heatmap aggregation test"
+
 # Explicit regression gate for the headless demand-generation integration test.
 run_and_check "cargo test -p tj_game --test headless_simulation" "headless simulation integration test"
 
