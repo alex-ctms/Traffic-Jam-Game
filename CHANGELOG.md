@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M5.2 (backend): Provide an API endpoint that returns heatmap data for a requested bounding box — t_4b156db4
 - M5.5 (infra): Implement a monthly traffic statistics reporter that writes a JSON file to disk and is unit‑tested for data layout — t_fc07e530. Implementation fully satisfies the acceptance criteria: the monthly traffic statistics reporter writes JSON to disk, includes a unit test verifying the data layout, and the verification gate in ops/ve
 - M3.5 (backend): Expose a console command `/pop_stats` that prints the current population and job counts — t_fac7f84b. The implementation correctly adds a `/pop_stats` console command that outputs the current population and job counts, and a unit test validates the output. All acceptance criteria are satisfied.
 - M2.1 (backend): Expose an API to assign a zone type (`Residential`, `Commercial`, `Industrial`, etc.) to a road segment — t_9ecf68e3
