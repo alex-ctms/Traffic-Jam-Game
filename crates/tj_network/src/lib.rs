@@ -18,6 +18,13 @@ pub enum ZoneType {
     Farm,
 }
 
+/// One of the two frontage sides of a physical road segment.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FrontageSide {
+    Left,
+    Right,
+}
+
 impl Direction {
     pub fn opposite(&self) -> Self {
         match self {
@@ -69,8 +76,9 @@ pub struct LaneSegment {
     pub length: f32,
     /// Current land-use designation, or `None` while the frontage is unzoned.
     pub zone: Option<ZoneType>,
-    /// Residential frontage density, normalized to the range 0.0 through 1.0.
-    pub density: f32,
+    /// Residential frontage density per side, normalized to 0.0 through 1.0.
+    /// Index 0 is left and index 1 is right.
+    pub density: [f32; 2],
 }
 
 impl LaneSegment {
@@ -82,7 +90,7 @@ impl LaneSegment {
             end_id,
             length,
             zone: None,
-            density: 0.0,
+            density: [0.0; 2],
         }
     }
 }
@@ -263,6 +271,18 @@ impl LaneGraph {
     /// Set residential frontage density to a value from 0.0 through 1.0.
     /// Returns false for non-residential/missing segments or out-of-range values.
     pub fn set_density(&mut self, road_id: u32, segment_id: u64, density: f32) -> bool {
+        self.set_side_density(road_id, segment_id, FrontageSide::Left, density)
+            && self.set_side_density(road_id, segment_id, FrontageSide::Right, density)
+    }
+
+    /// Set density for one residential frontage side.
+    pub fn set_side_density(
+        &mut self,
+        road_id: u32,
+        segment_id: u64,
+        side: FrontageSide,
+        density: f32,
+    ) -> bool {
         if !density.is_finite() || !(0.0..=1.0).contains(&density) {
             return false;
         }
@@ -276,7 +296,10 @@ impl LaneGraph {
         if segment.zone != Some(ZoneType::Residential) {
             return false;
         }
-        segment.density = density;
+        segment.density[match side {
+            FrontageSide::Left => 0,
+            FrontageSide::Right => 1,
+        }] = density;
         true
     }
 
@@ -287,7 +310,26 @@ impl LaneGraph {
             .get(&road_id)?
             .iter()
             .find(|segment| segment.id == segment_id)?;
-        (segment.zone == Some(ZoneType::Residential)).then_some(segment.density)
+        (segment.zone == Some(ZoneType::Residential)).then_some(segment.density[0])
+    }
+
+    /// Get density for one residential frontage side.
+    pub fn get_side_density(
+        &self,
+        road_id: u32,
+        segment_id: u64,
+        side: FrontageSide,
+    ) -> Option<f32> {
+        let segment = self
+            .road_segments
+            .get(&road_id)?
+            .iter()
+            .find(|segment| segment.id == segment_id)?;
+        let index = match side {
+            FrontageSide::Left => 0,
+            FrontageSide::Right => 1,
+        };
+        (segment.zone == Some(ZoneType::Residential)).then_some(segment.density[index])
     }
 
     pub fn get_lane_ids_at_intersection(&self, intersection_id: u32) -> Option<&HashSet<u64>> {
@@ -531,9 +573,25 @@ mod tests {
         assert_eq!(graph.get_density(road_id, residential), None);
         assert!(graph.assign_zone(road_id, residential, ZoneType::Residential));
         assert_eq!(graph.get_density(road_id, residential), Some(0.0));
-        assert!(graph.set_density(road_id, residential, 0.65));
-        assert_eq!(graph.get_density(road_id, residential), Some(0.65));
+        assert!(graph.set_side_density(road_id, residential, FrontageSide::Left, 0.65));
+        assert!(graph.set_side_density(road_id, residential, FrontageSide::Right, 0.35));
+        assert_eq!(
+            graph.get_side_density(road_id, residential, FrontageSide::Left),
+            Some(0.65)
+        );
+        assert_eq!(
+            graph.get_side_density(road_id, residential, FrontageSide::Right),
+            Some(0.35)
+        );
         assert!(graph.set_density(road_id, residential, 1.0));
+        assert_eq!(
+            graph.get_side_density(road_id, residential, FrontageSide::Left),
+            Some(1.0)
+        );
+        assert_eq!(
+            graph.get_side_density(road_id, residential, FrontageSide::Right),
+            Some(1.0)
+        );
         assert!(!graph.set_density(road_id, residential, -0.1));
         assert!(!graph.set_density(road_id, residential, 1.1));
         assert!(!graph.set_density(road_id, residential, f32::NAN));
