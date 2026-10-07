@@ -168,4 +168,55 @@ mod console_tests {
         assert_eq!(segments[0].zone, Some(ZoneType::Residential));
         assert!(app.world.resource::<ConsoleOutput>().0[0].contains("residential road 0"));
     }
+
+    #[test]
+    fn approving_network_change_updates_zones_and_traffic_path() {
+        let mut network = LaneGraph::new();
+        let existing_road = network.add_segment(1, 2, 5.0).unwrap();
+        network.assign_zone(
+            existing_road,
+            network.get_segments(existing_road).unwrap()[0].id,
+            ZoneType::Residential,
+        );
+
+        // A planned extension is kept separate until approval.
+        let planned_road = (2, 3, 5.0);
+        assert!(network.get_lanes_at_intersection(3).is_none());
+
+        // Approval applies the road and its frontage zoning to the live graph.
+        let approved_road = network
+            .add_segment(planned_road.0, planned_road.1, planned_road.2)
+            .expect("approved road should be added");
+        let segment_id = network.get_segments(approved_road).unwrap()[0].id;
+        assert!(network.assign_zone(approved_road, segment_id, ZoneType::Commercial));
+
+        assert_eq!(network.num_roads(), 2);
+        assert_eq!(
+            network.get_zone(approved_road, segment_id),
+            Some(ZoneType::Commercial)
+        );
+        assert!(network.get_lanes_at_intersection(3).is_some());
+        assert!(network.check_invariants());
+
+        let first_lane = network
+            .get_road_lanes(existing_road)
+            .unwrap()
+            .iter()
+            .find(|lane| lane.start_id == 1 && lane.end_id == 2)
+            .unwrap()
+            .id;
+        let second_lane = network
+            .get_road_lanes(approved_road)
+            .unwrap()
+            .iter()
+            .find(|lane| lane.start_id == 2 && lane.end_id == 3)
+            .unwrap()
+            .id;
+        let mut traffic = tj_traffic::TrafficSimulation::new(network);
+        let vehicle_id = traffic
+            .spawn_vehicle_on_route(&[first_lane, second_lane], 5.0)
+            .expect("route should reflect the approved connection");
+        traffic.tick();
+        assert_eq!(traffic.vehicle(vehicle_id).unwrap().lane_id, second_lane);
+    }
 }
