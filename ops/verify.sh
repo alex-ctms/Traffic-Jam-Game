@@ -50,6 +50,21 @@ fi
 # Step 3: cargo test --workspace
 run_and_check "cargo test --workspace" "cargo test"
 
+# Explicit regression gate for the residential zone per-side density model.
+echo "Running residential zone density tests..."
+density_output=$(cargo test -p tj_city density_tests 2>&1) || {
+    echo "$density_output"
+    echo "FAIL: residential zone density tests failed"
+    exit 1
+}
+echo "$density_output"
+# Guard against the filter silently matching zero tests.
+if ! grep -Eq "test result: ok\. [1-9][0-9]* passed" <<<"$density_output"; then
+    echo "FAIL: residential zone density tests matched no tests"
+    exit 1
+fi
+echo "PASS: residential zone density tests passed"
+
 # Explicit regression gate for the monthly traffic report JSON layout.
 run_and_check "cargo test -p tj_analytics monthly_report_tests" "monthly traffic report layout test"
 
