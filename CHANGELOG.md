@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M5.1 (backend): Generate a congestion heatmap by aggregating the density of vehicles per lane segment each tick — t_e947965f. The changes implement per‑tick lane‑segment congestion aggregation and provide a unit test plus verify.sh entry that pass.
 - M5.4 (frontend): Add a frontend overlay that visualizes the congestion heatmap with color gradients — t_4a07e82d
 - M6.5 (testing): Unit test that after approval the network graph reflects the planned changes and all dependent data (zone calculations, traffic paths) update co — t_261d3b45. The implementation adds a focused unit test that verifies a network change is correctly applied, updates zone data, and propagates to traffic paths. The test matches the acceptance criterion verbatim.
 - M2.3 (backend): Create a console command that creates a simple two‑point road and automatically applies a default residential zone — t_0063c01b. The implementation provides a console command `/create_road` that constructs a two‑point residential road via `LaneGraph::add_segment` and zones it residential, and includes a unit test asserting corr
