@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M6.5 (testing): Unit test that after approval the network graph reflects the planned changes and all dependent data (zone calculations, traffic paths) update co — t_261d3b45. The implementation adds a focused unit test that verifies a network change is correctly applied, updates zone data, and propagates to traffic paths. The test matches the acceptance criterion verbatim.
 - M2.3 (backend): Create a console command that creates a simple two‑point road and automatically applies a default residential zone — t_0063c01b. The implementation provides a console command `/create_road` that constructs a two‑point residential road via `LaneGraph::add_segment` and zones it residential, and includes a unit test asserting corr
 - M5.2 (backend): Provide an API endpoint that returns heatmap data for a requested bounding box — t_4b156db4
 - M5.5 (infra): Implement a monthly traffic statistics reporter that writes a JSON file to disk and is unit‑tested for data layout — t_fc07e530. Implementation fully satisfies the acceptance criteria: the monthly traffic statistics reporter writes JSON to disk, includes a unit test verifying the data layout, and the verification gate in ops/ve
