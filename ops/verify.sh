@@ -47,6 +47,9 @@ if [ "$quick" = false ]; then
     run_and_check "cargo clippy --workspace --all-targets --all-features -- -D warnings" "cargo clippy"
 fi
 
+# Fixed-rate simulation must produce the same ticks for different frame schedules.
+run_and_check "cargo test -p tj_core fixed_ticks_are_independent_of_frame_partitioning" "fixed-tick frame independence test"
+
 # Step 3: cargo test --workspace
 run_and_check "cargo test --workspace" "cargo test"
 
