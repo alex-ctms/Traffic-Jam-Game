@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M1.1 (backend): Add a fixed‑time simulation tick system that steps simulation logic at a constant rate regardless of frame rendering — t_06f3a89a
 - M3.4 (testing): Write an integration test that runs a headless Bevy simulation for 10 ticks and verifies all generated trips are queued and no panics occur — t_0e81eb5d
 - M3.3 (testing): Unit test that the total number of active trips equals the number of households multiplied by the average trips per day — t_e61ec6bb
 - M1.2 (backend): Implement a `LaneSegment` struct and `LaneGraph` that supports adding and removing road segments while maintaining a reliable adjacency list — t_57046b7f
