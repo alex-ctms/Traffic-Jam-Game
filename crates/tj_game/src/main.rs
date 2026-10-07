@@ -3,6 +3,7 @@ use bevy::prelude::*;
 fn main() {
     App::new()
         .add_plugins(tj_game::PopulationConsolePlugin)
+        .add_plugins(tj_game::MovingVehicleCountUiPlugin)
         .insert_resource(Monitor)
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
