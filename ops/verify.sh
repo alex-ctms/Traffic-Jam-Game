@@ -50,6 +50,9 @@ fi
 # Step 3: cargo test --workspace
 run_and_check "cargo test --workspace" "cargo test"
 
+# Explicit regression gate for the headless demand-generation integration test.
+run_and_check "cargo test -p tj_game --test headless_simulation" "headless simulation integration test"
+
 # Optional check for empty tests
 if [ "$require_tests" = true ]; then
     echo "Checking if tests were run..."

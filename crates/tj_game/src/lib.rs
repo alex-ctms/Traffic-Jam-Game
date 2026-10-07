@@ -6,6 +6,38 @@
 
 use bevy::prelude::*;
 
+/// Counts trips produced by the simulation and retained in its pending queue.
+#[derive(Resource, Default)]
+pub struct TripQueue {
+    pub generated: u64,
+    pub trips: Vec<Trip>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Trip {
+    pub origin: u64,
+    pub destination: u64,
+}
+
+/// Headless-safe demand generation used by the game and simulation tests.
+pub struct DemandPlugin;
+
+impl Plugin for DemandPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<TripQueue>()
+            .add_systems(Update, generate_and_queue_trip);
+    }
+}
+
+fn generate_and_queue_trip(mut queue: ResMut<TripQueue>) {
+    let id = queue.generated;
+    queue.trips.push(Trip {
+        origin: id,
+        destination: id + 1,
+    });
+    queue.generated += 1;
+}
+
 pub fn run() {
     App::new()
         .add_plugins(DefaultPlugins)
