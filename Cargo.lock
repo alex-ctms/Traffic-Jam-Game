@@ -3329,6 +3329,7 @@ dependencies = [
  "bevy",
  "tj_city",
  "tj_core",
+ "tj_network",
  "tj_population",
 ]
 
