@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M3.5 (backend): Expose a console command `/pop_stats` that prints the current population and job counts — t_fac7f84b. The implementation correctly adds a `/pop_stats` console command that outputs the current population and job counts, and a unit test validates the output. All acceptance criteria are satisfied.
 - M2.1 (backend): Expose an API to assign a zone type (`Residential`, `Commercial`, `Industrial`, etc.) to a road segment — t_9ecf68e3
 - M4.2 (backend): Create a `Vehicle` component that steps through lanes each tick, obeying traffic signal phases and yielding instructions — t_e145175a
 - M1.1 (backend): Add a fixed‑time simulation tick system that steps simulation logic at a constant rate regardless of frame rendering — t_06f3a89a
