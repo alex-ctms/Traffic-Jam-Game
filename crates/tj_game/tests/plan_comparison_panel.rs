@@ -52,6 +52,13 @@ fn panel_stays_hidden_until_a_plan_is_applied_then_renders_comparison() {
     app.update();
     app.update();
 
+    let style = panel_query.single(&app.world);
+    assert_eq!(
+        style.display,
+        Display::Flex,
+        "panel must become visible after a plan is applied"
+    );
+
     use tj_game::ComparisonMetricLine;
     let mut line_query = app
         .world
