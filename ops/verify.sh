@@ -56,6 +56,9 @@ run_and_check "cargo test -p tj_analytics monthly_report_tests" "monthly traffic
 # Explicit regression gate for the headless demand-generation integration test.
 run_and_check "cargo test -p tj_game --test headless_simulation" "headless simulation integration test"
 
+# Explicit regression gate for the default residential road console command.
+run_and_check "cargo test -p tj_game create_road_command_adds_two_point_residential_road" "default residential road console command test"
+
 # Optional check for empty tests
 if [ "$require_tests" = true ]; then
     echo "Checking if tests were run..."
