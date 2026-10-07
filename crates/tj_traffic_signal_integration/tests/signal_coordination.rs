@@ -22,19 +22,19 @@ fn traffic_signal_controls_vehicle_flow_through_the_simulation_loop() {
         .spawn_vehicle(lane_id, 2.0)
         .expect("vehicle should spawn on the road");
 
-    // Ticks 0, 1, and 2 are red: the vehicle remains stopped at the light.
-    for _ in 0..3 {
+    // The vehicle travels along its lane while red, but cannot cross the stop line.
+    for expected_position in [2.0, 4.0, 6.0] {
+        simulation.tick();
         assert_eq!(
             simulation
                 .vehicle(vehicle_id)
                 .expect("vehicle exists")
                 .position,
-            0.0
+            expected_position
         );
-        simulation.tick();
     }
 
-    // Tick 3 is green: the vehicle starts moving and advances according to speed.
+    // Tick 3 is green: the vehicle advances toward the end of its lane.
     assert_eq!(TrafficSignal::new(3, 2).state_at(3), SignalState::Green);
     simulation.tick();
     assert_eq!(
@@ -42,16 +42,16 @@ fn traffic_signal_controls_vehicle_flow_through_the_simulation_loop() {
             .vehicle(vehicle_id)
             .expect("vehicle exists")
             .position,
-        2.0
+        8.0
     );
 
-    // The next green tick advances it again; it is not permanently blocked by the red phase.
+    // The next green tick reaches the end of the lane.
     simulation.tick();
     assert_eq!(
         simulation
             .vehicle(vehicle_id)
             .expect("vehicle exists")
             .position,
-        4.0
+        10.0
     );
 }
