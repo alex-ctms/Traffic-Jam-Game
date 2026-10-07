@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M2.3 (backend): Create a console command that creates a simple two‑point road and automatically applies a default residential zone — t_0063c01b. The implementation provides a console command `/create_road` that constructs a two‑point residential road via `LaneGraph::add_segment` and zones it residential, and includes a unit test asserting corr
 - M5.2 (backend): Provide an API endpoint that returns heatmap data for a requested bounding box — t_4b156db4
 - M5.5 (infra): Implement a monthly traffic statistics reporter that writes a JSON file to disk and is unit‑tested for data layout — t_fc07e530. Implementation fully satisfies the acceptance criteria: the monthly traffic statistics reporter writes JSON to disk, includes a unit test verifying the data layout, and the verification gate in ops/ve
 - M3.5 (backend): Expose a console command `/pop_stats` that prints the current population and job counts — t_fac7f84b. The implementation correctly adds a `/pop_stats` console command that outputs the current population and job counts, and a unit test validates the output. All acceptance criteria are satisfied.
