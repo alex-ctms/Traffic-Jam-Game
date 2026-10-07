@@ -3331,6 +3331,7 @@ dependencies = [
  "tj_core",
  "tj_network",
  "tj_population",
+ "tj_traffic",
 ]
 
 [[package]]
