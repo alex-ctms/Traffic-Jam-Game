@@ -52,7 +52,7 @@ run_and_check "cargo test --workspace" "cargo test"
 
 # Explicit regression gate for the residential zone per-side density model.
 echo "Running residential zone density tests..."
-density_output=$(cargo test -p tj_city density_tests 2>&1) || {
+density_output=$(cargo test -p tj_city --lib density_tests 2>&1) || {
     echo "$density_output"
     echo "FAIL: residential zone density tests failed"
     exit 1
