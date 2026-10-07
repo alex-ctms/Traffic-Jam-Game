@@ -49,6 +49,28 @@ impl Lane {
     }
 }
 
+/// Physical road segment between two intersections.
+#[derive(Debug, Clone, PartialEq)]
+pub struct LaneSegment {
+    pub id: u64,
+    pub road_id: u32,
+    pub start_id: u32,
+    pub end_id: u32,
+    pub length: f32,
+}
+
+impl LaneSegment {
+    pub fn new(id: u64, road_id: u32, start_id: u32, end_id: u32, length: f32) -> Self {
+        Self {
+            id,
+            road_id,
+            start_id,
+            end_id,
+            length,
+        }
+    }
+}
+
 /// Lane graph connects lanes with adjacency information to maintain connectivity from intersection topology
 #[derive(Debug, Clone, Default)]
 pub struct LaneGraph {
@@ -60,6 +82,9 @@ pub struct LaneGraph {
     pub lane_by_id: HashMap<u64, Lane>,
     // Counter for lane IDs
     pub lane_counter: u64,
+    pub road_segments: HashMap<u32, Vec<LaneSegment>>,
+    /// Directed lane IDs at each start intersection; unlike road-level adjacency this retains parallel segments.
+    pub lane_adjacency: HashMap<u32, HashSet<u64>>,
 }
 
 impl LaneGraph {
@@ -74,8 +99,16 @@ impl LaneGraph {
         // Simple sequential assignment for now
         let road_id = self.lane_counter as u32;
         let mut road_lanes = Vec::new();
+        let mut road_segments = Vec::new();
 
         for (start, end, len) in segments {
+            road_segments.push(LaneSegment::new(
+                self.lane_counter,
+                road_id,
+                start,
+                end,
+                len,
+            ));
             // Create a forward lane
             let forward_lane = Lane::new(
                 self.lane_counter,
@@ -88,6 +121,10 @@ impl LaneGraph {
             self.lane_counter += 1;
             self.lane_by_id
                 .insert(forward_lane.id, forward_lane.clone());
+            self.lane_adjacency
+                .entry(start)
+                .or_default()
+                .insert(forward_lane.id);
             road_lanes.push(forward_lane);
 
             // Create a backward lane (reverse direction)
@@ -102,6 +139,10 @@ impl LaneGraph {
             self.lane_counter += 1;
             self.lane_by_id
                 .insert(backward_lane.id, backward_lane.clone());
+            self.lane_adjacency
+                .entry(end)
+                .or_default()
+                .insert(backward_lane.id);
             road_lanes.push(backward_lane);
 
             // Update adjacency for both endpoints
@@ -115,6 +156,7 @@ impl LaneGraph {
                 .insert((road_id, Direction::Backward));
         }
         self.road_lanes.insert(road_id, road_lanes);
+        self.road_segments.insert(road_id, road_segments);
         Some(road_id)
     }
 
@@ -122,6 +164,7 @@ impl LaneGraph {
     /// Returns true if the road existed.
     pub fn remove_road(&mut self, road_id: u32) -> bool {
         if let Some(lanes) = self.road_lanes.remove(&road_id) {
+            self.road_segments.remove(&road_id);
             for lane in &lanes {
                 // Remove from adjacency entries
                 if let Some(set) = self.adjacency.get_mut(&lane.start_id) {
@@ -133,6 +176,12 @@ impl LaneGraph {
 
                 // Remove from lane_by_id mapping
                 self.lane_by_id.remove(&lane.id);
+                if let Some(ids) = self.lane_adjacency.get_mut(&lane.start_id) {
+                    ids.remove(&lane.id);
+                    if ids.is_empty() {
+                        self.lane_adjacency.remove(&lane.start_id);
+                    }
+                }
             }
             true
         } else {
@@ -158,6 +207,24 @@ impl LaneGraph {
         self.lane_by_id.get(&id)
     }
 
+    /// Add one segment as a road and return its road ID.
+    pub fn add_segment(&mut self, start_id: u32, end_id: u32, length: f32) -> Option<u32> {
+        self.add_road(vec![(start_id, end_id, length)])
+    }
+
+    /// Remove a segment previously added as its own road.
+    pub fn remove_segment(&mut self, road_id: u32) -> bool {
+        self.remove_road(road_id)
+    }
+
+    pub fn get_segments(&self, road_id: u32) -> Option<&[LaneSegment]> {
+        self.road_segments.get(&road_id).map(Vec::as_slice)
+    }
+
+    pub fn get_lane_ids_at_intersection(&self, intersection_id: u32) -> Option<&HashSet<u64>> {
+        self.lane_adjacency.get(&intersection_id)
+    }
+
     /// Get the number of lanes for a specific road
     pub fn num_lanes(&self, road_id: u32) -> usize {
         self.road_lanes.get(&road_id).map_or(0, |lanes| lanes.len())
@@ -174,6 +241,27 @@ impl LaneGraph {
                         return false;
                     }
                 } else {
+                    return false;
+                }
+            }
+        }
+
+        for lane in self.lane_by_id.values() {
+            if !self
+                .lane_adjacency
+                .get(&lane.start_id)
+                .is_some_and(|ids| ids.contains(&lane.id))
+            {
+                return false;
+            }
+        }
+        for (intersection, ids) in &self.lane_adjacency {
+            for id in ids {
+                if !self
+                    .lane_by_id
+                    .get(id)
+                    .is_some_and(|lane| lane.start_id == *intersection)
+                {
                     return false;
                 }
             }
@@ -318,5 +406,24 @@ mod tests {
 
         let lanes_at_end = graph.get_lanes_at_intersection(30).unwrap();
         assert!(lanes_at_end.contains(&(road_id, Direction::Backward)));
+    }
+
+    #[test]
+    fn segment_adjacency_preserves_parallel_segments_and_cleans_up() {
+        let mut graph = LaneGraph::new();
+        let first = graph.add_segment(1, 2, 10.0).unwrap();
+        let second = graph.add_segment(1, 3, 12.0).unwrap();
+        assert_eq!(graph.get_segments(first).unwrap().len(), 1);
+        assert_eq!(graph.get_lane_ids_at_intersection(1).unwrap().len(), 2);
+        assert!(graph.check_invariants());
+
+        assert!(graph.remove_segment(first));
+        let remaining = graph.get_lane_ids_at_intersection(1).unwrap();
+        assert_eq!(remaining.len(), 1);
+        assert!(graph.get_road_lanes(second).is_some());
+        assert!(graph.check_invariants());
+        assert!(graph.remove_segment(second));
+        assert!(graph.get_lane_ids_at_intersection(1).is_none());
+        assert!(graph.check_invariants());
     }
 }
