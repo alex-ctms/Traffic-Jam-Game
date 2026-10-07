@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M2.1 (backend): Expose an API to assign a zone type (`Residential`, `Commercial`, `Industrial`, etc.) to a road segment — t_9ecf68e3
 - M4.2 (backend): Create a `Vehicle` component that steps through lanes each tick, obeying traffic signal phases and yielding instructions — t_e145175a
 - M1.1 (backend): Add a fixed‑time simulation tick system that steps simulation logic at a constant rate regardless of frame rendering — t_06f3a89a
 - M3.4 (testing): Write an integration test that runs a headless Bevy simulation for 10 ticks and verifies all generated trips are queued and no panics occur — t_0e81eb5d
