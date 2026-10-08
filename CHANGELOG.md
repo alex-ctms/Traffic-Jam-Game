@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Infra: Add pytest invocation to ops/verify.sh — t_5bb9b36c
 - Frontend: Integrate PlanningToggle into main UI (deferred part) (deferred part) — t_eb411a50
 - M3.1 (backend): Define `Household` and `JobZone` structures that aggregate demographic data from zone density models — t_070c5b26
 - Frontend: Add accessible title and aria-labelledby [Revision 1] — t_b04492a9. The implementation adds a unique id to the planning modal title and links it via aria‑labelledby, satisfying the accessibility requirement.
