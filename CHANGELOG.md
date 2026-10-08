@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Testing: Add unit test to ops/verify.sh harness — t_912ebe5f
 - Frontend: Render modal in PlanningToggle when isPlanning is true — t_538fb14a
 - Infra: Add proptest dependency to Cargo.toml — t_019a1dc1
 - Frontend: Integrate PlanningToggle into main UI — t_4d13100f. All acceptance criteria are satisfied. The PlanningToggle has been added to the main UI, its label correctly reflects the planning state, and the modal opens, closes, and commits/cancels as defined. C
