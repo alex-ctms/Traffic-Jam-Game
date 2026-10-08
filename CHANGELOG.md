@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Frontend: Integrate PlanningToggle into main UI (deferred part) (deferred part) (deferred part) — t_8ebf7254
 - Testing: Write focused unit tests for PlanningToggle modal — t_f49656a5
 - Testing: Create headless integration test for staging a new road — t_ab82ccc1
 - Infra: Print a summary of passed/failed tests — t_63fd950a
