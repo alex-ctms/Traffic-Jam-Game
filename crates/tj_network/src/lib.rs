@@ -1,6 +1,37 @@
 // Network graph structures
 
-use std::collections::{HashMap, HashSet};
+use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap, HashSet};
+
+#[derive(Clone, Copy, Debug)]
+struct PathQueueEntry {
+    cost: f64,
+    lane_id: u64,
+}
+
+impl PartialEq for PathQueueEntry {
+    fn eq(&self, other: &Self) -> bool {
+        self.cost == other.cost && self.lane_id == other.lane_id
+    }
+}
+
+impl Eq for PathQueueEntry {}
+
+impl PartialOrd for PathQueueEntry {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for PathQueueEntry {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // BinaryHeap is a max-heap; reverse the cost ordering for Dijkstra.
+        other
+            .cost
+            .total_cmp(&self.cost)
+            .then_with(|| other.lane_id.cmp(&self.lane_id))
+    }
+}
 
 pub mod planning;
 
@@ -231,6 +262,82 @@ impl LaneGraph {
     /// Get a lane by its ID
     pub fn get_lane_by_id(&self, id: u64) -> Option<&Lane> {
         self.lane_by_id.get(&id)
+    }
+
+    /// Find the least-length directed lane path, including both endpoint lanes.
+    /// Invalid or non-positive lane lengths use a cost of 1.0.
+    pub fn find_path(&self, start_lane_id: u64, end_lane_id: u64) -> Vec<u64> {
+        if !self.lane_by_id.contains_key(&start_lane_id)
+            || !self.lane_by_id.contains_key(&end_lane_id)
+        {
+            return Vec::new();
+        }
+
+        if start_lane_id == end_lane_id {
+            return vec![start_lane_id];
+        }
+
+        // Group lanes by their start intersection once so each lane's outgoing
+        // transitions can be enumerated directly from the graph's lane data.
+        let mut lanes_from_intersection: HashMap<u32, Vec<u64>> = HashMap::new();
+        for lane in self.lane_by_id.values() {
+            lanes_from_intersection
+                .entry(lane.start_id)
+                .or_default()
+                .push(lane.id);
+        }
+        let mut adjacency: HashMap<u64, Vec<u64>> = HashMap::new();
+        for lane in self.lane_by_id.values() {
+            if let Some(outgoing) = lanes_from_intersection.get(&lane.end_id) {
+                adjacency.insert(lane.id, outgoing.clone());
+            }
+        }
+
+        let mut distances = HashMap::from([(start_lane_id, 0.0_f64)]);
+        let mut previous = HashMap::new();
+        let mut queue = BinaryHeap::from([PathQueueEntry {
+            cost: 0.0,
+            lane_id: start_lane_id,
+        }]);
+
+        while let Some(PathQueueEntry { cost, lane_id }) = queue.pop() {
+            if cost > distances[&lane_id] {
+                continue;
+            }
+            if lane_id == end_lane_id {
+                break;
+            }
+
+            for &next_id in adjacency.get(&lane_id).into_iter().flatten() {
+                let next_lane = &self.lane_by_id[&next_id];
+                let lane_cost = if next_lane.length.is_finite() && next_lane.length > 0.0 {
+                    f64::from(next_lane.length)
+                } else {
+                    1.0
+                };
+                let next_cost = cost + lane_cost;
+                if next_cost < *distances.get(&next_id).unwrap_or(&f64::INFINITY) {
+                    distances.insert(next_id, next_cost);
+                    previous.insert(next_id, lane_id);
+                    queue.push(PathQueueEntry {
+                        cost: next_cost,
+                        lane_id: next_id,
+                    });
+                }
+            }
+        }
+
+        if !distances.contains_key(&end_lane_id) {
+            return Vec::new();
+        }
+        let mut path = vec![end_lane_id];
+        let mut current = end_lane_id;
+        while current != start_lane_id {
+            current = previous[&current];
+            path.push(current);
+        }
+        path.reverse();
+        path
     }
 
     /// Add one segment as a road and return its road ID.
@@ -599,5 +706,94 @@ mod tests {
         assert!(!graph.set_density(road_id, residential, f32::NAN));
         assert!(!graph.set_density(road_id, unzoned, 0.5));
         assert_eq!(graph.get_density(road_id, unzoned), None);
+    }
+
+    #[test]
+    fn find_path_returns_shortest_connected_lane_sequence() {
+        let mut graph = LaneGraph::new();
+        graph.add_segment(0, 1, 1.0).unwrap();
+        graph.add_segment(1, 2, 1.0).unwrap();
+        graph.add_segment(1, 3, 5.0).unwrap();
+        graph.add_segment(2, 3, 1.0).unwrap();
+        graph.add_segment(3, 4, 1.0).unwrap();
+        let start = graph
+            .lane_by_id
+            .values()
+            .find(|lane| lane.start_id == 0 && lane.end_id == 1)
+            .unwrap()
+            .id;
+        let end = graph
+            .lane_by_id
+            .values()
+            .find(|lane| lane.start_id == 3 && lane.end_id == 4)
+            .unwrap()
+            .id;
+        let first_short = graph
+            .lane_by_id
+            .values()
+            .find(|lane| lane.start_id == 1 && lane.end_id == 2)
+            .unwrap()
+            .id;
+        let via_short = graph
+            .lane_by_id
+            .values()
+            .find(|lane| lane.start_id == 2 && lane.end_id == 3)
+            .unwrap()
+            .id;
+
+        assert_eq!(
+            graph.find_path(start, end),
+            vec![start, first_short, via_short, end]
+        );
+    }
+
+    #[test]
+    fn find_path_handles_single_lane_unknown_and_disconnected_endpoints() {
+        let mut graph = LaneGraph::new();
+        graph.add_segment(1, 2, 5.0).unwrap();
+        graph.add_segment(8, 9, 5.0).unwrap();
+        let first = graph
+            .lane_by_id
+            .values()
+            .find(|lane| lane.start_id == 1 && lane.end_id == 2)
+            .unwrap()
+            .id;
+        let disconnected = graph
+            .lane_by_id
+            .values()
+            .find(|lane| lane.start_id == 8 && lane.end_id == 9)
+            .unwrap()
+            .id;
+
+        assert_eq!(graph.find_path(first, first), vec![first]);
+        assert!(graph.find_path(first, disconnected).is_empty());
+        assert!(graph.find_path(u64::MAX, first).is_empty());
+    }
+
+    #[test]
+    fn find_path_handles_dense_intersection_connectivity() {
+        let mut graph = LaneGraph::new();
+        for end in 2..12 {
+            graph.add_segment(1, end, 1.0).unwrap();
+        }
+        let start = graph
+            .lane_by_id
+            .values()
+            .find(|lane| lane.start_id == 1 && lane.end_id == 2)
+            .unwrap()
+            .id;
+        let end = graph
+            .lane_by_id
+            .values()
+            .find(|lane| lane.start_id == 2 && lane.end_id == 1)
+            .unwrap()
+            .id;
+
+        let path = graph.find_path(start, end);
+        assert_eq!(path.first(), Some(&start));
+        assert_eq!(path.last(), Some(&end));
+        assert!(path.windows(2).all(|pair| {
+            graph.lane_by_id[&pair[0]].end_id == graph.lane_by_id[&pair[1]].start_id
+        }));
     }
 }
