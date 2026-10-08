@@ -9,6 +9,8 @@ use tj_analytics::HeatmapData;
 use tj_network::{LaneGraph, ZoneType};
 use tj_population::PopulationStats;
 
+pub mod planning_toggle;
+
 /// Aggregate counts available to developer console commands.
 #[derive(Resource, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct CityPopulation(pub PopulationStats);
@@ -154,7 +156,7 @@ pub struct MovingVehicle;
 pub struct MovingVehicleCount(pub usize);
 
 #[derive(Component)]
-struct MovingVehicleCountLabel;
+pub struct MovingVehicleCountLabel;
 
 /// Displays the number of ECS vehicle entities currently marked as moving.
 pub struct MovingVehicleCountUiPlugin;

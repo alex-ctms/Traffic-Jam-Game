@@ -5,6 +5,7 @@ fn main() {
         .add_plugins(tj_game::PopulationConsolePlugin)
         .add_plugins(tj_game::MovingVehicleCountUiPlugin)
         .add_plugins(tj_game::PlanComparisonPanelPlugin)
+        .add_plugins(tj_game::planning_toggle::PlanningTogglePlugin)
         .insert_resource(Monitor)
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
