@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M4.5 (frontend): Add an on‑screen UI widget that displays the current number of moving vehicles (frontend) — t_dc806144. Implementation adds an on‑screen UI widget that correctly displays the current number of moving vehicles, with a focused test verifying the functionality.
 - M3.1 (backend): Define `Household` and `JobZone` structures that aggregate demographic data from zone density models — t_35fc20ee
 - M3.1 (backend): Define `Household` and `JobZone` structures that aggregate demographic data from zone density models — t_8c8e9204
 - M2.4 (backend): Implement a basic density model: each side of a residential zone has a `density` field (0..1) — t_30fd4d2e. The implementation satisfies the density model requirement and includes a passing unit test.
