@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Infra: Add proptest dependency to Cargo.toml — t_019a1dc1
 - Frontend: Integrate PlanningToggle into main UI — t_4d13100f. All acceptance criteria are satisfied. The PlanningToggle has been added to the main UI, its label correctly reflects the planning state, and the modal opens, closes, and commits/cancels as defined. C
 - Frontend: Update PlanningToggle Component to Expose Committed State (deferred part) — t_056f75af
 - Backend: Implement Dijkstra pathfinding over LaneGraph — t_893913fc. Implementation satisfies all acceptance criteria: the `find_path` method is publicly exposed, returns a correct lane‑ID list, returns an empty list for disconnected graphs, uses a binary heap giving O
