@@ -460,7 +460,10 @@ mod console_tests {
         assert_eq!(segments.len(), 1);
         assert_eq!((segments[0].start_id, segments[0].end_id), (1, 2));
         assert_eq!(segments[0].length, 10.0);
-        assert_eq!(segments[0].zone, Some(ZoneType::Residential));
+        assert_eq!(
+            segments[0].zone.map(|zone| zone.zone_type),
+            Some(ZoneType::Residential)
+        );
         assert!(app.world.resource::<ConsoleOutput>().0[0].contains("residential road 0"));
     }
 
