@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M4.3 (testing): Unit test that a vehicle is correctly delayed when approaching a traffic signal with a red phase — t_a001035c. The changes add a unit test that verifies a vehicle is delayed at a red traffic signal and updates ops/verify.sh to include the test; the single acceptance criterion is satisfied.
 - Frontend: Add accessibility attribute test for modal — t_db8a5539
 - Backend: Create Graph Connectivity After Add/Remove Test — t_f1e776c5
 - Frontend: Create a snapshot test for PlanningToggle modal — t_e92aaab6
