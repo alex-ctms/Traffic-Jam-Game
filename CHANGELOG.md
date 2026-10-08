@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Testing: Render PlanningToggle component in test — t_865f03b2
 - Frontend: Render commit state flag for test visibility — t_1f3dffee
 - Frontend: Implement modal with Commit and Cancel buttons [Revision 1] — t_6fbdade7. All acceptance criteria are satisfied; no defects detected.
 - Testing: Create PlanningToggle.test.tsx with correct import — t_fc08bb3a
