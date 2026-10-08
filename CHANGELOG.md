@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Testing: Write automated test for modal behavior — t_6037c04e
 - Frontend: Add accessibility attributes to modal — t_54ffeaed
 - Frontend: Implement Cancel button behavior — t_51c3a9e0
 - Frontend: Implement Commit button behavior — t_910e74bc
