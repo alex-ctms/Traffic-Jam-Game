@@ -18,6 +18,19 @@ pub struct PlanningToggleState {
     pub committed: bool,
 }
 
+impl PlanningToggleState {
+    /// Commit button: record the commit and close the modal.
+    pub fn handle_commit(&mut self) {
+        self.committed = true;
+        self.modal_open = false;
+    }
+
+    /// Cancel button: close the modal only; planning mode is left as is.
+    pub fn handle_cancel(&mut self) {
+        self.modal_open = false;
+    }
+}
+
 #[derive(Component)]
 pub struct PlanningToggleButton;
 
@@ -132,9 +145,9 @@ fn planning_toggle_interactions(
         if *interaction != Interaction::Pressed {
             continue;
         }
-        state.modal_open = false;
-        if *action == PlanningModalAction::Commit {
-            state.committed = true;
+        match action {
+            PlanningModalAction::Commit => state.handle_commit(),
+            PlanningModalAction::Cancel => state.handle_cancel(),
         }
     }
 }
@@ -300,6 +313,50 @@ mod tests {
                 committed: false,
             }
         );
+    }
+
+    #[test]
+    fn committed_flag_starts_false() {
+        let app = app();
+        assert!(!state(&app).committed);
+    }
+
+    #[test]
+    fn handle_commit_sets_committed_and_closes_modal() {
+        let mut s = PlanningToggleState {
+            planning: true,
+            modal_open: true,
+            committed: false,
+        };
+        s.handle_commit();
+        assert_eq!(
+            s,
+            PlanningToggleState {
+                planning: true,
+                modal_open: false,
+                committed: true,
+            }
+        );
+    }
+
+    #[test]
+    fn handle_cancel_only_closes_modal() {
+        for committed in [false, true] {
+            let mut s = PlanningToggleState {
+                planning: true,
+                modal_open: true,
+                committed,
+            };
+            s.handle_cancel();
+            assert_eq!(
+                s,
+                PlanningToggleState {
+                    planning: true,
+                    modal_open: false,
+                    committed,
+                }
+            );
+        }
     }
 
     #[test]
