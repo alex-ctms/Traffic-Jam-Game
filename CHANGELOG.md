@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Infra: Print a summary of passed/failed tests — t_63fd950a
 - Infra: Ensure non‑zero exit on test failures — t_afaf17c5
 - Infra: Add pytest invocation to ops/verify.sh — t_5bb9b36c
 - Frontend: Integrate PlanningToggle into main UI (deferred part) (deferred part) — t_eb411a50
