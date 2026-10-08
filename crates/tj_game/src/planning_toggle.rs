@@ -13,7 +13,20 @@ pub struct PlanningToggleState {
     /// The commit/cancel modal is visible.
     pub modal_open: bool,
     /// The player committed the current plan.
-    pub committed: bool,
+    pub has_committed: bool,
+}
+
+impl PlanningToggleState {
+    /// Commit button: record the commit and close the modal.
+    pub fn handle_commit(&mut self) {
+        self.has_committed = true;
+        self.modal_open = false;
+    }
+
+    /// Cancel button: close the modal only; planning mode is left as is.
+    pub fn handle_cancel(&mut self) {
+        self.modal_open = false;
+    }
 }
 
 #[derive(Component)]
@@ -125,9 +138,9 @@ fn planning_toggle_interactions(
         if *interaction != Interaction::Pressed {
             continue;
         }
-        state.modal_open = false;
-        if *action == PlanningModalAction::Commit {
-            state.committed = true;
+        match action {
+            PlanningModalAction::Commit => state.handle_commit(),
+            PlanningModalAction::Cancel => state.handle_cancel(),
         }
     }
 }
@@ -271,13 +284,57 @@ mod tests {
             PlanningToggleState {
                 planning: true,
                 modal_open: false,
-                committed: false,
+                has_committed: false,
             }
         );
     }
 
     #[test]
-    fn commit_hides_modal_and_sets_committed_flag() {
+    fn has_committed_flag_starts_false() {
+        let app = app();
+        assert!(!state(&app).has_committed);
+    }
+
+    #[test]
+    fn handle_commit_sets_has_committed_and_closes_modal() {
+        let mut s = PlanningToggleState {
+            planning: true,
+            modal_open: true,
+            has_committed: false,
+        };
+        s.handle_commit();
+        assert_eq!(
+            s,
+            PlanningToggleState {
+                planning: true,
+                modal_open: false,
+                has_committed: true,
+            }
+        );
+    }
+
+    #[test]
+    fn handle_cancel_only_closes_modal() {
+        for has_committed in [false, true] {
+            let mut s = PlanningToggleState {
+                planning: true,
+                modal_open: true,
+                has_committed,
+            };
+            s.handle_cancel();
+            assert_eq!(
+                s,
+                PlanningToggleState {
+                    planning: true,
+                    modal_open: false,
+                    has_committed,
+                }
+            );
+        }
+    }
+
+    #[test]
+    fn commit_hides_modal_and_sets_has_committed_flag() {
         let mut app = app();
         press::<With<PlanningToggleButton>>(&mut app);
         press_action(&mut app, PlanningModalAction::Commit);
@@ -287,7 +344,7 @@ mod tests {
             PlanningToggleState {
                 planning: true,
                 modal_open: false,
-                committed: true,
+                has_committed: true,
             }
         );
     }
