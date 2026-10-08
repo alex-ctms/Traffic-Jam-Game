@@ -1,70 +1,83 @@
 use proptest::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 use tj_network::{LaneGraph, ZoneType};
 
-fn zone_component_count(graph: &LaneGraph, zones: &[u32]) -> usize {
-    let mut parent: HashMap<u32, u32> = HashMap::new();
+/// Counts undirected connected components that contain at least one zoned node.
+/// A node is zoned when it is an endpoint of a zone-assigned road segment.
+fn zone_component_count(graph: &LaneGraph) -> usize {
+    let mut neighbors: HashMap<u32, HashSet<u32>> = HashMap::new();
     for lanes in graph.road_lanes.values() {
         for lane in lanes {
-            for node in [lane.start_id, lane.end_id] {
-                if let std::collections::hash_map::Entry::Vacant(entry) = parent.entry(node) {
-                    entry.insert(node);
+            neighbors
+                .entry(lane.start_id)
+                .or_default()
+                .insert(lane.end_id);
+            neighbors
+                .entry(lane.end_id)
+                .or_default()
+                .insert(lane.start_id);
+        }
+    }
+
+    let zone_nodes: HashSet<u32> = graph
+        .road_segments
+        .values()
+        .flatten()
+        .filter(|segment| segment.zone.is_some())
+        .flat_map(|segment| [segment.start_id, segment.end_id])
+        .collect();
+
+    let mut visited = HashSet::new();
+    let mut components_with_zones = 0;
+    for &node in neighbors.keys() {
+        if !visited.insert(node) {
+            continue;
+        }
+
+        let mut contains_zone = zone_nodes.contains(&node);
+        let mut pending = VecDeque::from([node]);
+        while let Some(current) = pending.pop_front() {
+            if let Some(adjacent) = neighbors.get(&current) {
+                for &next in adjacent {
+                    if visited.insert(next) {
+                        contains_zone |= zone_nodes.contains(&next);
+                        pending.push_back(next);
+                    }
                 }
             }
         }
+        components_with_zones += usize::from(contains_zone);
     }
-
-    fn root(parent: &mut HashMap<u32, u32>, mut node: u32) -> u32 {
-        while parent[&node] != node {
-            let grandparent = parent[&parent[&node]];
-            parent.insert(node, grandparent);
-            node = grandparent;
-        }
-        node
-    }
-
-    for lanes in graph.road_lanes.values() {
-        for lane in lanes
-            .iter()
-            .filter(|lane| lane.direction == tj_network::Direction::Forward)
-        {
-            let left = root(&mut parent, lane.start_id);
-            let right = root(&mut parent, lane.end_id);
-            parent.insert(left, right);
-        }
-    }
-
-    zones
-        .iter()
-        .map(|&node| root(&mut parent, node))
-        .collect::<std::collections::HashSet<_>>()
-        .len()
+    components_with_zones
 }
 
 proptest! {
     #[test]
-    fn removing_a_road_from_a_zoned_cycle_never_increases_zone_components(
-        extra_nodes in 0u8..32,
-        removal_index in 0u8..32,
+    fn removing_any_road_never_increases_zone_components(
+        node_count in 3u8..32,
+        zoned_roads in prop::collection::vec(any::<bool>(), 3..32),
     ) {
-        let node_count = usize::from(extra_nodes) + 3;
         let mut graph = LaneGraph::new();
-        let mut road_ids = Vec::with_capacity(node_count);
+        let mut road_ids = Vec::with_capacity(usize::from(node_count));
         for node in 0..node_count {
             let next = (node + 1) % node_count;
-            let road = graph.add_road(vec![(node as u32, next as u32, 1.0)]).unwrap();
+            let road = graph.add_road(vec![(u32::from(node), u32::from(next), 1.0)]).unwrap();
             road_ids.push(road);
-            if node < 3 {
-                let segment = graph.get_segments(road).unwrap()[0].id;
-                prop_assert!(graph.assign_zone(road, segment, ZoneType::Residential));
+            if zoned_roads[usize::from(node) % zoned_roads.len()] {
+                let segment_id = graph.get_segments(road).unwrap()[0].id;
+                prop_assert!(graph.assign_zone(road, segment_id, ZoneType::Residential));
             }
         }
 
-        let zones = [0, 1, 2];
-        let before = zone_component_count(&graph, &zones);
-        let road_to_remove = road_ids[usize::from(removal_index) % node_count];
-        prop_assert!(graph.remove_road(road_to_remove));
-        let after = zone_component_count(&graph, &zones);
-        prop_assert!(after <= before, "zone components increased from {before} to {after}");
+        let before = zone_component_count(&graph);
+        for road_id in road_ids {
+            let mut graph_after_removal = graph.clone();
+            prop_assert!(graph_after_removal.remove_road(road_id));
+            let after = zone_component_count(&graph_after_removal);
+            prop_assert!(
+                after <= before,
+                "removing road {road_id} increased zone-containing components from {before} to {after}"
+            );
+        }
     }
 }
