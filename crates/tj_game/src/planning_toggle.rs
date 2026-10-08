@@ -340,6 +340,13 @@ mod tests {
             app.world.get::<UiElementId>(title).unwrap().0,
             PLANNING_MODAL_TITLE_ID
         );
+        let title_ids = app
+            .world
+            .query::<&UiElementId>()
+            .iter(&app.world)
+            .filter(|id| id.0 == PLANNING_MODAL_TITLE_ID)
+            .count();
+        assert_eq!(title_ids, 1, "the visible modal title id must be unique");
         assert_eq!(
             app.world.get::<AriaLabelledBy>(modal).unwrap().0,
             PLANNING_MODAL_TITLE_ID
