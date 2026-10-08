@@ -65,6 +65,9 @@ run_and_check "cargo test -p tj_analytics lane_segment_heatmap_aggregates_both_d
 # Explicit regression gate for no duplicate edges and connectivity after each add/remove.
 run_and_check "cargo test -p tj_network --test graph_integrity" "lane graph integrity tests"
 
+# Explicit property regression gate for zone connectivity after every road removal.
+run_and_check "cargo test -p tj_network --test zone_connectivity" "zone connectivity road-removal property test"
+
 # Explicit regression gate for staged planning edits and approval.
 run_and_check "cargo test -p tj_network planning::tests" "planning overlay regression tests"
 
