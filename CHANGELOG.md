@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Resolve repeated review findings: [M1.4][Testing] Write a property test that verifies that removal of a road never increases the number of c (deferred part) — t_c7bc3fcc
 - M1.4 (testing): Write a property test that verifies that removal of a road never increases the number of connected components containing zone nodes — t_33477eb7
 - Frontend: Create PlanningToggle Component with Modal Dialog — t_c244b618
 - Resolve repeated review findings: [M1.4][Testing] Write a property test that verifies that removal of a road never increases the number of connected components containing zone node [Revision 2] — t_d02d0e29. Added a property test in crates/tj_network/tests/zone_connectivity.rs that checks that removing any road never increases the number of connected components containing zone nodes, updated Cargo.toml wi
