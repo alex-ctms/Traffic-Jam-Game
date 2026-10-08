@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Resolve repeated review findings: [M2.4][Backend] Implement a basic density model: each side of a residential zone has a `density` field (0..1) [Revision 2] — t_1fbaa8ad. The implementation fixes the cargo test invocation and adds the required density model with unit tests, satisfying all acceptance criteria.
 - M1.3 (testing): Write unit tests that assert there are no duplicate edges and that the graph remains connected after each add/remove operation — t_4c76e3ac
 - M1.3 (testing): Write unit tests that assert there are no duplicate edges and that the graph remains connected after each add/remove operation — t_3b16be53
 - M6.4 (frontend): Add a side‑panel that shows a numeric comparison of current vs projected metrics (average commute, congestion, cost) after a plan is applied — t_9d150453. The side‑panel implementation fully satisfies the M6.4 acceptance criterion.
