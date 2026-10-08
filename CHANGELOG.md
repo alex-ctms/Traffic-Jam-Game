@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Backend: Create headless integration test for 100 ticks with 200 vehicles (deferred part) (deferred part) — t_d1afe964
 - Frontend: Introduce Modal rendering in PlanningToggle — t_c63b91ef
 - Testing: Verify modal is not visible initially — t_1809307c
 - Testing: Verify button displays "Enable Planning Mode" — t_74a52f64
