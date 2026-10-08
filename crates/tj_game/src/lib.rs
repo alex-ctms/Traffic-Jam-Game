@@ -142,6 +142,71 @@ pub struct ConsoleCommands(pub Vec<String>);
 #[derive(Resource, Default)]
 pub struct ConsoleOutput(pub Vec<String>);
 
+/// Marks a frontend vehicle entity that is currently moving.
+///
+/// Vehicle presentation code should add or remove this component as the
+/// corresponding simulation vehicle starts or stops moving.
+#[derive(Component, Clone, Copy, Debug, Default)]
+pub struct MovingVehicle;
+
+/// Current number of moving frontend vehicles.
+#[derive(Resource, Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct MovingVehicleCount(pub usize);
+
+#[derive(Component)]
+struct MovingVehicleCountLabel;
+
+/// Displays the number of ECS vehicle entities currently marked as moving.
+pub struct MovingVehicleCountUiPlugin;
+
+impl Plugin for MovingVehicleCountUiPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<MovingVehicleCount>()
+            .add_systems(Startup, setup_moving_vehicle_count_ui)
+            .add_systems(Update, update_moving_vehicle_count);
+    }
+}
+
+fn setup_moving_vehicle_count_ui(mut commands: Commands) {
+    commands.spawn(Camera2dBundle::default());
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                top: Val::Px(12.0),
+                left: Val::Px(12.0),
+                padding: UiRect::all(Val::Px(8.0)),
+                ..default()
+            },
+            background_color: Color::rgba(0.05, 0.05, 0.05, 0.8).into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn((
+                TextBundle::from_section(
+                    "Moving vehicles: 0",
+                    TextStyle {
+                        font_size: 20.0,
+                        color: Color::WHITE,
+                        ..default()
+                    },
+                ),
+                MovingVehicleCountLabel,
+            ));
+        });
+}
+
+fn update_moving_vehicle_count(
+    vehicles: Query<(), With<MovingVehicle>>,
+    mut count: ResMut<MovingVehicleCount>,
+    mut labels: Query<&mut Text, With<MovingVehicleCountLabel>>,
+) {
+    count.0 = vehicles.iter().count();
+    for mut label in &mut labels {
+        label.sections[0].value = format!("Moving vehicles: {}", count.0);
+    }
+}
+
 fn process_console_commands(
     mut commands: ResMut<ConsoleCommands>,
     population: Res<CityPopulation>,
@@ -485,6 +550,60 @@ mod console_tests {
                 .iter(&app.world)
                 .count(),
             0
+        );
+    }
+}
+
+#[cfg(test)]
+mod moving_vehicle_ui_tests {
+    use super::*;
+
+    #[test]
+    fn widget_count_tracks_moving_vehicle_entities() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins)
+            .add_plugins(MovingVehicleCountUiPlugin);
+        let first_vehicle = app.world.spawn(MovingVehicle).id();
+        let second_vehicle = app.world.spawn(MovingVehicle).id();
+        app.world.spawn_empty(); // stationary/non-vehicle entities are excluded
+
+        app.update();
+
+        assert_eq!(app.world.resource::<MovingVehicleCount>().0, 2);
+        let mut labels = app
+            .world
+            .query_filtered::<&Text, With<MovingVehicleCountLabel>>();
+        assert_eq!(
+            labels.single(&app.world).sections[0].value,
+            "Moving vehicles: 2"
+        );
+
+        // The widget follows current movement state instead of retaining the
+        // count from startup.
+        app.world
+            .entity_mut(first_vehicle)
+            .remove::<MovingVehicle>();
+        let third_vehicle = app.world.spawn(MovingVehicle).id();
+        app.update();
+
+        assert_eq!(app.world.resource::<MovingVehicleCount>().0, 2);
+        assert_eq!(
+            labels.single(&app.world).sections[0].value,
+            "Moving vehicles: 2"
+        );
+
+        app.world.entity_mut(first_vehicle).despawn();
+        app.world
+            .entity_mut(second_vehicle)
+            .remove::<MovingVehicle>();
+        app.world
+            .entity_mut(third_vehicle)
+            .remove::<MovingVehicle>();
+        app.update();
+        assert_eq!(app.world.resource::<MovingVehicleCount>().0, 0);
+        assert_eq!(
+            labels.single(&app.world).sections[0].value,
+            "Moving vehicles: 0"
         );
     }
 }
