@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M1.3 (testing): Write unit tests that assert there are no duplicate edges and that the graph remains connected after each add/remove operation [Revision 1] — t_a26f56c2. The submitted changes implement the required unit tests for duplicate edge detection and connectivity preservation after add/remove operations, and integrate them into the verification pipeline.
 - M4.5 (frontend): Add an on‑screen UI widget that displays the current number of moving vehicles (frontend) — t_dc806144. Implementation adds an on‑screen UI widget that correctly displays the current number of moving vehicles, with a focused test verifying the functionality.
 - M3.1 (backend): Define `Household` and `JobZone` structures that aggregate demographic data from zone density models — t_35fc20ee
 - M3.1 (backend): Define `Household` and `JobZone` structures that aggregate demographic data from zone density models — t_8c8e9204
