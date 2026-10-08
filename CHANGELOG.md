@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Frontend: Create a snapshot test for PlanningToggle modal — t_e92aaab6
 - Frontend: Add accessible ARIA attributes to PlanningToggle modal — t_fa6eb8fb
 - Frontend: Implement React Testing Library tests for modal behavior — t_1223cc4c
 - Frontend: Ensure Cancel button only closes the modal — t_48ded5af
