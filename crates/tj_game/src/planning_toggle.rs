@@ -77,10 +77,22 @@ fn spawn_planning_toggle(mut commands: Commands) {
             ..default()
         })
         .with_children(|root| {
-            root.spawn((ButtonBundle::default(), PlanningToggleButton))
-                .with_children(|button| {
-                    button.spawn((text(TOGGLE_LABEL), PlanningToggleLabel));
-                });
+            root.spawn((
+                ButtonBundle {
+                    style: Style {
+                        min_width: Val::Px(196.0),
+                        padding: UiRect::axes(Val::Px(12.0), Val::Px(8.0)),
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    background_color: Color::rgb(0.12, 0.32, 0.48).into(),
+                    ..default()
+                },
+                PlanningToggleButton,
+            ))
+            .with_children(|button| {
+                button.spawn((text(TOGGLE_LABEL), PlanningToggleLabel));
+            });
             root.spawn((
                 NodeBundle {
                     style: Style {
