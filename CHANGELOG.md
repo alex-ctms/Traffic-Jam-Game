@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Frontend: Update project documentation for new test — t_81236ddd
 - Testing: Add unit test to ops/verify.sh harness — t_912ebe5f
 - Frontend: Render modal in PlanningToggle when isPlanning is true — t_538fb14a
 - Infra: Add proptest dependency to Cargo.toml — t_019a1dc1
