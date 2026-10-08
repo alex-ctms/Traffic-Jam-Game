@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M3.1 (backend): Define `Household` and `JobZone` structures that aggregate demographic data from zone density models — t_070c5b26
 - Frontend: Add accessible title and aria-labelledby [Revision 1] — t_b04492a9. The implementation adds a unique id to the planning modal title and links it via aria‑labelledby, satisfying the accessibility requirement.
 - Infra: Ensure required test dependencies are available — t_f3ed32a7
 - Testing: Verify Test Imports and Accessibility — t_fbf8ade3
