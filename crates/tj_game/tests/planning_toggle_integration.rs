@@ -81,6 +81,13 @@ fn toggle_is_installed_once_in_the_composed_main_ui() {
     assert_eq!(root_style.top, Val::Px(16.0));
     assert_eq!(root_style.right, Val::Px(16.0));
     assert_eq!(style.display, Display::Flex, "button starts visible");
+    assert_eq!(style.min_width, Val::Px(196.0));
+    let button = entity_with::<PlanningToggleButton>(&mut app);
+    assert_eq!(
+        app.world.get::<BackgroundColor>(button).unwrap().0,
+        Color::rgb(0.12, 0.32, 0.48),
+        "the visible toggle has a contrasting button background"
+    );
 
     // The modal starts hidden.
     assert_eq!(style_of::<PlanningModal>(&mut app).display, Display::None);
