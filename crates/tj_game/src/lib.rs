@@ -563,8 +563,8 @@ mod moving_vehicle_ui_tests {
         let mut app = App::new();
         app.add_plugins(MinimalPlugins)
             .add_plugins(MovingVehicleCountUiPlugin);
-        app.world.spawn(MovingVehicle);
-        app.world.spawn(MovingVehicle);
+        let first_vehicle = app.world.spawn(MovingVehicle).id();
+        let second_vehicle = app.world.spawn(MovingVehicle).id();
         app.world.spawn_empty(); // stationary/non-vehicle entities are excluded
 
         app.update();
@@ -576,6 +576,34 @@ mod moving_vehicle_ui_tests {
         assert_eq!(
             labels.single(&app.world).sections[0].value,
             "Moving vehicles: 2"
+        );
+
+        // The widget follows current movement state instead of retaining the
+        // count from startup.
+        app.world
+            .entity_mut(first_vehicle)
+            .remove::<MovingVehicle>();
+        let third_vehicle = app.world.spawn(MovingVehicle).id();
+        app.update();
+
+        assert_eq!(app.world.resource::<MovingVehicleCount>().0, 2);
+        assert_eq!(
+            labels.single(&app.world).sections[0].value,
+            "Moving vehicles: 2"
+        );
+
+        app.world.entity_mut(first_vehicle).despawn();
+        app.world
+            .entity_mut(second_vehicle)
+            .remove::<MovingVehicle>();
+        app.world
+            .entity_mut(third_vehicle)
+            .remove::<MovingVehicle>();
+        app.update();
+        assert_eq!(app.world.resource::<MovingVehicleCount>().0, 0);
+        assert_eq!(
+            labels.single(&app.world).sections[0].value,
+            "Moving vehicles: 0"
         );
     }
 }
