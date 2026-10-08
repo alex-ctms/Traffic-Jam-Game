@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Backend: Create Graph Connectivity After Add/Remove Test — t_f1e776c5
 - Frontend: Create a snapshot test for PlanningToggle modal — t_e92aaab6
 - Frontend: Add accessible ARIA attributes to PlanningToggle modal — t_fa6eb8fb
 - Frontend: Implement React Testing Library tests for modal behavior — t_1223cc4c
