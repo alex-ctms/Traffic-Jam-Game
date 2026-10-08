@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Testing: Add test harness configuration — t_9f43ebf2
 - Frontend: Add accessible title and aria-labelledby [Revision 1] (deferred part) — t_b529a349
 - Frontend: Integrate PlanningToggle into main UI (deferred part) (deferred part) (deferred part) — t_8ebf7254
 - Testing: Write focused unit tests for PlanningToggle modal — t_f49656a5
