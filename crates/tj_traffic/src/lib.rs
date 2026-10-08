@@ -198,7 +198,7 @@ mod tests {
     }
 
     #[test]
-    fn vehicle_waits_for_green_then_advances_to_the_next_lane() {
+    fn vehicle_approaching_red_signal_waits_at_stop_line_until_green() {
         let mut network = LaneGraph::new();
         let first_road = network.add_segment(1, 2, 10.0).unwrap();
         let second_road = network.add_segment(2, 3, 10.0).unwrap();
@@ -211,17 +211,25 @@ mod tests {
             .unwrap()
             .id;
         let mut simulation = TrafficSimulation::new(network);
-        simulation.add_signal(2, TrafficSignal::new(1, 1));
+        simulation.add_signal(2, TrafficSignal::new(3, 2));
         let vehicle_id = simulation
-            .spawn_vehicle_on_route(&[first_lane, next_lane], 10.0)
+            .spawn_vehicle_on_route(&[first_lane, next_lane], 5.0)
             .unwrap();
 
-        simulation.tick(); // red: reaches the stop line but cannot enter the next lane
+        simulation.tick(); // red: approaches the intersection
+        assert_eq!(simulation.vehicle(vehicle_id).unwrap().position, 5.0);
+
+        simulation.tick(); // red: reaches the stop line, but cannot enter the next lane
         let vehicle = simulation.vehicle(vehicle_id).unwrap();
         assert_eq!(vehicle.lane_id, first_lane);
         assert_eq!(vehicle.position, 10.0);
 
-        simulation.tick(); // green
+        simulation.tick(); // still red: remains stopped at the stop line
+        let vehicle = simulation.vehicle(vehicle_id).unwrap();
+        assert_eq!(vehicle.lane_id, first_lane);
+        assert_eq!(vehicle.position, 10.0);
+
+        simulation.tick(); // green: proceeds into the next lane
         let vehicle = simulation.vehicle(vehicle_id).unwrap();
         assert_eq!(vehicle.lane_id, next_lane);
         assert_eq!(vehicle.position, 0.0);
