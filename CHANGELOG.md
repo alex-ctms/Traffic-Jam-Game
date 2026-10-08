@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Frontend: Integrate PlanningToggle into main UI — t_4d13100f. All acceptance criteria are satisfied. The PlanningToggle has been added to the main UI, its label correctly reflects the planning state, and the modal opens, closes, and commits/cancels as defined. C
 - Frontend: Update PlanningToggle Component to Expose Committed State (deferred part) — t_056f75af
 - Backend: Implement Dijkstra pathfinding over LaneGraph — t_893913fc. Implementation satisfies all acceptance criteria: the `find_path` method is publicly exposed, returns a correct lane‑ID list, returns an empty list for disconnected graphs, uses a binary heap giving O
 - M2.2 (backend): Define a `ZoneType` enum and store zone metadata in a per‑segment data structure — t_b7163731. The implementation introduces a `ZoneType` enum and stores per-segment zoning metadata via the `ZoneMetadata` struct embedded in `LaneSegment.zone`. A dedicated unit test (`zone_metadata_is_stored_per
