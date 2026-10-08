@@ -62,6 +62,9 @@ run_and_check "cargo test -p tj_analytics monthly_report_tests" "monthly traffic
 # Explicit regression gate for per-tick lane segment congestion aggregation.
 run_and_check "cargo test -p tj_analytics lane_segment_heatmap_aggregates_both_directions_for_each_tick" "lane segment heatmap aggregation test"
 
+# Explicit regression gate for no duplicate edges and connectivity after each add/remove.
+run_and_check "cargo test -p tj_network --test graph_integrity" "lane graph integrity tests"
+
 # Explicit regression gate for staged planning edits and approval.
 run_and_check "cargo test -p tj_network planning::tests" "planning overlay regression tests"
 
