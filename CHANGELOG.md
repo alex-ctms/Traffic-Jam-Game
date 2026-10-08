@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Testing: Write unit test for vehicle delay at red signal — t_c9d29cda
 - Backend: Implement vehicle delay logic for red traffic signals — t_31f4e211
 - Resolve repeated review findings: [M1.4][Testing] Write a property test that verifies that removal of a road never increases the number of c (deferred part) — t_c7bc3fcc
 - M1.4 (testing): Write a property test that verifies that removal of a road never increases the number of connected components containing zone nodes — t_33477eb7
