@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M2.2 (backend): Define a `ZoneType` enum and store zone metadata in a per‑segment data structure — t_b7163731. The implementation introduces a `ZoneType` enum and stores per-segment zoning metadata via the `ZoneMetadata` struct embedded in `LaneSegment.zone`. A dedicated unit test (`zone_metadata_is_stored_per
 - Resolve repeated review findings: [Testing] Write unit tests for PlanningToggle — t_fe81d55e
 - Testing: Write unit test for vehicle delay at red signal — t_c9d29cda
 - Backend: Implement vehicle delay logic for red traffic signals — t_31f4e211
