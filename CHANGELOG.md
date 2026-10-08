@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Frontend: Ensure Cancel button only closes the modal — t_48ded5af
 - Frontend: Implement hasCommitted state and commit handler in PlanningToggle — t_5f579c17
 - Frontend: Add accessibility attributes and correct message to PlanningToggle modal — t_9d9bea23
 - Testing: Add Unit Tests for Daily Trip Generator — t_7cfb72dc
