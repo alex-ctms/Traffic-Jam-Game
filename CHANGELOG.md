@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Frontend: Add commit/cancel handlers and update state [Revision 2] — t_8be0770b. The commit adds the required `has_committed` state, correctly implements `handle_commit` and `handle_cancel` to set it true and close the modal respectively without extra side effects, wires buttons t
 - Backend: Create headless integration test for 100 ticks with 200 vehicles (deferred part) (deferred part) — t_d1afe964
 - Frontend: Introduce Modal rendering in PlanningToggle — t_c63b91ef
 - Testing: Verify modal is not visible initially — t_1809307c
