@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M3.1 (backend): Define `Household` and `JobZone` structures that aggregate demographic data from zone density models — t_35fc20ee
 - M3.1 (backend): Define `Household` and `JobZone` structures that aggregate demographic data from zone density models — t_8c8e9204
 - M2.4 (backend): Implement a basic density model: each side of a residential zone has a `density` field (0..1) — t_30fd4d2e. The implementation satisfies the density model requirement and includes a passing unit test.
 - Resolve repeated review findings: [M2.4][Backend] Implement a basic density model: each side of a residential zone has a `density` field (0..1) [Revision 2] — t_1fbaa8ad. The implementation fixes the cargo test invocation and adds the required density model with unit tests, satisfying all acceptance criteria.
