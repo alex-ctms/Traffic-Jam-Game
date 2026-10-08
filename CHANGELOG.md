@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Frontend: Add accessibility attribute test for modal — t_db8a5539
 - Backend: Create Graph Connectivity After Add/Remove Test — t_f1e776c5
 - Frontend: Create a snapshot test for PlanningToggle modal — t_e92aaab6
 - Frontend: Add accessible ARIA attributes to PlanningToggle modal — t_fa6eb8fb
