@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Infra: Ensure non‑zero exit on test failures — t_afaf17c5
 - Infra: Add pytest invocation to ops/verify.sh — t_5bb9b36c
 - Frontend: Integrate PlanningToggle into main UI (deferred part) (deferred part) — t_eb411a50
 - M3.1 (backend): Define `Household` and `JobZone` structures that aggregate demographic data from zone density models — t_070c5b26
