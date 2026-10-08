@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Frontend: Add accessibility attributes to modal — t_54ffeaed
 - Frontend: Implement Cancel button behavior — t_51c3a9e0
 - Frontend: Implement Commit button behavior — t_910e74bc
 - Backend: Create headless integration test for 100 ticks with 200 vehicles — t_f1bbc6d5
