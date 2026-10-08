@@ -4,8 +4,6 @@
 use bevy::prelude::*;
 
 pub const TOGGLE_LABEL: &str = "Enable Planning Mode";
-/// Label shown while planning mode is on.
-pub const TOGGLE_LABEL_ACTIVE: &str = "Disable Planning Mode";
 
 /// Planning flags the toggle and its modal read and write.
 #[derive(Resource, Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -42,12 +40,7 @@ impl Plugin for PlanningTogglePlugin {
             .add_systems(Startup, spawn_planning_toggle)
             .add_systems(
                 Update,
-                (
-                    planning_toggle_interactions,
-                    sync_planning_modal,
-                    sync_planning_toggle_label,
-                )
-                    .chain(),
+                (planning_toggle_interactions, sync_planning_modal).chain(),
             );
     }
 }
@@ -139,27 +132,6 @@ fn planning_toggle_interactions(
     }
 }
 
-/// Keeps the button label in sync with the planning state so the button
-/// always offers the action the player can take next.
-fn sync_planning_toggle_label(
-    state: Res<PlanningToggleState>,
-    mut labels: Query<&mut Text, With<PlanningToggleLabel>>,
-) {
-    if !state.is_changed() {
-        return;
-    }
-    let desired = if state.planning {
-        TOGGLE_LABEL_ACTIVE
-    } else {
-        TOGGLE_LABEL
-    };
-    for mut label in &mut labels {
-        if label.sections[0].value != desired {
-            label.sections[0].value = desired.to_string();
-        }
-    }
-}
-
 fn sync_planning_modal(
     state: Res<PlanningToggleState>,
     mut modals: Query<&mut Style, With<PlanningModal>>,
@@ -233,7 +205,7 @@ mod tests {
     }
 
     #[test]
-    fn button_label_reflects_current_planning_state() {
+    fn toggle_keeps_its_required_accessible_label_after_opening_modal() {
         let mut app = app();
         let button = app
             .world
@@ -241,12 +213,11 @@ mod tests {
             .single(&app.world);
         assert_eq!(label_of(&app, button), "Enable Planning Mode");
         press::<With<PlanningToggleButton>>(&mut app);
-        assert_eq!(label_of(&app, button), "Disable Planning Mode");
-        // Cancel keeps planning mode on, so the label stays active.
+        assert_eq!(label_of(&app, button), "Enable Planning Mode");
         press_action(&mut app, PlanningModalAction::Cancel);
-        assert_eq!(label_of(&app, button), "Disable Planning Mode");
+        assert_eq!(label_of(&app, button), "Enable Planning Mode");
         press_action(&mut app, PlanningModalAction::Commit);
-        assert_eq!(label_of(&app, button), "Disable Planning Mode");
+        assert_eq!(label_of(&app, button), "Enable Planning Mode");
     }
 
     #[test]
