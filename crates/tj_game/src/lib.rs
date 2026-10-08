@@ -11,6 +11,8 @@ use tj_population::PopulationStats;
 
 pub mod planning_toggle;
 
+use planning_toggle::PlanningTogglePlugin;
+
 /// Aggregate counts available to developer console commands.
 #[derive(Resource, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct CityPopulation(pub PopulationStats);
@@ -410,6 +412,7 @@ pub fn run() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(CongestionHeatmapOverlayPlugin)
+        .add_plugins(PlanningTogglePlugin)
         .add_systems(Startup, setup)
         .run();
 }
