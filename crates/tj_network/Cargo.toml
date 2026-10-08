@@ -8,3 +8,4 @@ tj_core = { path = "../tj_core" }
 
 [dev-dependencies]
 rand = "0.8"
+proptest = "1"
