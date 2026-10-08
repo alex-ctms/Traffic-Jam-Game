@@ -1,9 +1,10 @@
 // PlanningToggle: a button that enables planning mode and opens a
 // commit/cancel modal. Headless-safe; tests drive it with `Interaction`.
 
-use bevy::prelude::*;
+use bevy::{a11y::AccessibilityNode, prelude::*};
 
 pub const TOGGLE_LABEL: &str = "Enable Planning Mode";
+pub const PLANNING_MODAL_TITLE_ID: &str = "planning-modal-title";
 
 /// Planning flags the toggle and its modal read and write.
 #[derive(Resource, Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -39,6 +40,21 @@ pub struct PlanningToggleLabel;
 #[derive(Component)]
 pub struct PlanningModal;
 
+/// Marks the visible title that names the planning modal.
+#[derive(Component)]
+pub struct PlanningModalTitle;
+
+/// Stable identifier for the visible planning modal title.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct UiElementId(pub &'static str);
+
+/// String reference used by a UI container's `aria-labelledby` relationship.
+///
+/// Bevy UI has no DOM attributes, so this keeps the HTML-equivalent reference
+/// alongside the AccessKit relationship exposed to assistive technology.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AriaLabelledBy(pub &'static str);
+
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlanningModalAction {
     Commit,
@@ -50,7 +66,10 @@ pub struct PlanningTogglePlugin;
 impl Plugin for PlanningTogglePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<PlanningToggleState>()
-            .add_systems(Startup, spawn_planning_toggle)
+            .add_systems(
+                Startup,
+                (spawn_planning_toggle, link_planning_modal_title).chain(),
+            )
             .add_systems(
                 Update,
                 (planning_toggle_interactions, sync_planning_modal).chain(),
@@ -108,9 +127,29 @@ fn spawn_planning_toggle(mut commands: Commands) {
                     },
                     ..default()
                 },
+                AccessibilityNode::from({
+                    let mut node = bevy::a11y::accesskit::NodeBuilder::new(
+                        bevy::a11y::accesskit::Role::Dialog,
+                    );
+                    node.set_name("Planning Mode".to_string());
+                    node
+                }),
                 PlanningModal,
+                AriaLabelledBy(PLANNING_MODAL_TITLE_ID),
             ))
             .with_children(|modal| {
+                modal.spawn((
+                    text("Planning Mode"),
+                    PlanningModalTitle,
+                    UiElementId(PLANNING_MODAL_TITLE_ID),
+                    AccessibilityNode::from({
+                        let mut node = bevy::a11y::accesskit::NodeBuilder::new(
+                            bevy::a11y::accesskit::Role::Heading,
+                        );
+                        node.set_name("Planning Mode".to_string());
+                        node
+                    }),
+                ));
                 for (label, action) in [
                     ("Commit", PlanningModalAction::Commit),
                     ("Cancel", PlanningModalAction::Cancel),
@@ -123,6 +162,18 @@ fn spawn_planning_toggle(mut commands: Commands) {
                 }
             });
         });
+}
+
+fn link_planning_modal_title(
+    mut modals: Query<&mut AccessibilityNode, With<PlanningModal>>,
+    titles: Query<Entity, With<PlanningModalTitle>>,
+) {
+    let Ok(title) = titles.get_single() else {
+        return;
+    };
+    for mut modal in &mut modals {
+        modal.set_labelled_by(vec![bevy::a11y::accesskit::NodeId(title.to_bits())]);
+    }
 }
 
 fn planning_toggle_interactions(
@@ -229,10 +280,10 @@ mod tests {
         assert_eq!(label_of(&app, button), "Enable Planning Mode");
         press_action(&mut app, PlanningModalAction::Cancel);
         assert_eq!(label_of(&app, button), "Enable Planning Mode");
-        assert!(!state(&app).committed);
+        assert!(!state(&app).has_committed);
         press_action(&mut app, PlanningModalAction::Commit);
         assert_eq!(label_of(&app, button), "Enable Planning Mode");
-        assert!(state(&app).committed);
+        assert!(state(&app).has_committed);
         assert_eq!(modal_display(&mut app), Display::None);
     }
 
@@ -270,7 +321,52 @@ mod tests {
             .world
             .query_filtered::<Entity, With<PlanningModal>>()
             .single(&app.world);
-        assert_eq!(app.world.get::<Children>(modal).unwrap().len(), 2);
+        assert_eq!(app.world.get::<Children>(modal).unwrap().len(), 3);
+    }
+
+    #[test]
+    fn modal_has_a_visible_title_and_matching_accessible_name() {
+        let mut app = app();
+        let modal = app
+            .world
+            .query_filtered::<Entity, With<PlanningModal>>()
+            .single(&app.world);
+        let title = app
+            .world
+            .query_filtered::<Entity, With<PlanningModalTitle>>()
+            .single(&app.world);
+        assert!(app.world.get::<Children>(modal).unwrap().contains(&title));
+        assert_eq!(
+            app.world.get::<UiElementId>(title).unwrap().0,
+            PLANNING_MODAL_TITLE_ID
+        );
+        let title_ids = app
+            .world
+            .query::<&UiElementId>()
+            .iter(&app.world)
+            .filter(|id| id.0 == PLANNING_MODAL_TITLE_ID)
+            .count();
+        assert_eq!(title_ids, 1, "the visible modal title id must be unique");
+        assert_eq!(
+            app.world.get::<AriaLabelledBy>(modal).unwrap().0,
+            PLANNING_MODAL_TITLE_ID
+        );
+
+        assert_eq!(
+            app.world.get::<Text>(title).unwrap().sections[0].value,
+            "Planning Mode"
+        );
+        assert_eq!(
+            app.world.get::<AccessibilityNode>(modal).unwrap().name(),
+            Some("Planning Mode")
+        );
+        assert_eq!(
+            app.world
+                .get::<AccessibilityNode>(modal)
+                .unwrap()
+                .labelled_by(),
+            &[bevy::a11y::accesskit::NodeId(title.to_bits())]
+        );
     }
 
     #[test]
