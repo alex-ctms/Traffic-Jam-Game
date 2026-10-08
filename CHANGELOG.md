@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Frontend: Implement modal dialog for commit/cancel — t_71b83a3a
 - M3.1 (backend): Define `Household` and `JobZone` structures that aggregate demographic data from zone density models — t_4eb73d17
 - Frontend: Create PlanningToggle component — t_b5d217fe
 - Resolve repeated review findings: Resolve repeated review findings: [M5.1][Backend] Generate a congestion heatmap by aggregating the density of vehicles per lane segment each tick — t_da36a8e2
