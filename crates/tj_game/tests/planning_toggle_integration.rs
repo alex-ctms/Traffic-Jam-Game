@@ -23,33 +23,33 @@ use tj_game::{
 fn composed_ui() -> App {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
-         .add_plugins(PopulationConsolePlugin)
-         .add_plugins(MovingVehicleCountUiPlugin)
-         .add_plugins(PlanComparisonPanelPlugin)
-         .add_plugins(PlanningTogglePlugin);
+        .add_plugins(PopulationConsolePlugin)
+        .add_plugins(MovingVehicleCountUiPlugin)
+        .add_plugins(PlanComparisonPanelPlugin)
+        .add_plugins(PlanningTogglePlugin);
     app.update(); // Startup: every widget spawns.
     app
 }
 
 fn entity_with<T: Component>(app: &mut App) -> Entity {
     app.world
-         .query_filtered::<Entity, With<T>>()
-         .single(&app.world)
+        .query_filtered::<Entity, With<T>>()
+        .single(&app.world)
 }
 
 fn press(app: &mut App, entity: Entity) {
-     *app.world.get_mut::<Interaction>(entity).unwrap() = Interaction::Pressed;
+    *app.world.get_mut::<Interaction>(entity).unwrap() = Interaction::Pressed;
     app.update();
 }
 
 fn press_action(app: &mut App, action: PlanningModalAction) {
     let entity = app
-         .world
-         .query::<(Entity, &PlanningModalAction)>()
-         .iter(&app.world)
-         .find(|(_, a)| **a == action)
-         .map(|(e, _)| e)
-         .unwrap();
+        .world
+        .query::<(Entity, &PlanningModalAction)>()
+        .iter(&app.world)
+        .find(|(_, a)| **a == action)
+        .map(|(e, _)| e)
+        .unwrap();
     press(app, entity);
 }
 
@@ -68,13 +68,13 @@ fn root_style_of<T: Component>(app: &mut App) -> Style {
 fn toggle_is_installed_once_in_the_composed_main_ui() {
     let mut app = composed_ui();
     let toggles = app
-         .world
-         .query_filtered::<Entity, With<PlanningToggleButton>>()
-         .iter(&app.world)
-         .count();
+        .world
+        .query_filtered::<Entity, With<PlanningToggleButton>>()
+        .iter(&app.world)
+        .count();
     assert_eq!(toggles, 1, "exactly one planning toggle in the final UI");
 
-     // Absolutely anchored top-right: visible at every viewport size.
+    // Absolutely anchored top-right: visible at every viewport size.
     let style = style_of::<PlanningToggleButton>(&mut app);
     let root_style = root_style_of::<PlanningToggleButton>(&mut app);
     assert_eq!(root_style.position_type, PositionType::Absolute);
@@ -82,7 +82,7 @@ fn toggle_is_installed_once_in_the_composed_main_ui() {
     assert_eq!(root_style.right, Val::Px(16.0));
     assert_eq!(style.display, Display::Flex, "button starts visible");
 
-     // The modal starts hidden.
+    // The modal starts hidden.
     assert_eq!(style_of::<PlanningModal>(&mut app).display, Display::None);
 }
 
@@ -90,8 +90,8 @@ fn toggle_is_installed_once_in_the_composed_main_ui() {
 fn existing_widgets_keep_their_anchors_and_render_with_the_toggle_present() {
     let mut app = composed_ui();
 
-     // Counter is top-left, toggle column is top-right, plan panel is pinned
-     // below the toggle row on the right edge: no two widgets share an anchor.
+    // Counter is top-left, toggle column is top-right, plan panel is pinned
+    // below the toggle row on the right edge: no two widgets share an anchor.
     let counter_style = root_style_of::<MovingVehicleCountLabel>(&mut app);
     assert_eq!(counter_style.position_type, PositionType::Absolute);
     assert_eq!(counter_style.top, Val::Px(12.0));
@@ -102,11 +102,11 @@ fn existing_widgets_keep_their_anchors_and_render_with_the_toggle_present() {
     assert_eq!(panel_style.right, Val::Px(16.0));
     assert!(
         matches!(panel_style.top, Val::Px(v) if v > 80.0),
-         "plan panel must sit below the toggle row: {:?}",
+        "plan panel must sit below the toggle row: {:?}",
         panel_style.top
     );
 
-     // The counter still tracks movement with the toggle mounted.
+    // The counter still tracks movement with the toggle mounted.
     app.world.spawn(MovingVehicle);
     app.update();
     let label_entity = entity_with::<MovingVehicleCountLabel>(&mut app);
@@ -121,26 +121,20 @@ fn modal_interaction_in_the_composed_ui_matches_plugin_contract() {
     let toggle = entity_with::<PlanningToggleButton>(&mut app);
     press(&mut app, toggle);
     assert!(app.world.resource::<PlanningToggleState>().modal_open);
-    assert_eq!(
-        style_of::<PlanningModal>(&mut app).display,
-        Display::Flex
-     );
+    assert_eq!(style_of::<PlanningModal>(&mut app).display, Display::Flex);
 
-     // While the modal is open, the other widgets remain mounted and their
-     // styles untouched (no interference).
+    // While the modal is open, the other widgets remain mounted and their
+    // styles untouched (no interference).
     assert_eq!(
         style_of::<ComparisonPanel>(&mut app).display,
         Display::None,
-         "hidden panel stays hidden while modal opens"
-     );
+        "hidden panel stays hidden while modal opens"
+    );
 
     press_action(&mut app, PlanningModalAction::Commit);
     let state = *app.world.resource::<PlanningToggleState>();
     assert!(state.planning && state.committed && !state.modal_open);
-    assert_eq!(
-        style_of::<PlanningModal>(&mut app).display,
-        Display::None
-     );
+    assert_eq!(style_of::<PlanningModal>(&mut app).display, Display::None);
 }
 
 #[test]
