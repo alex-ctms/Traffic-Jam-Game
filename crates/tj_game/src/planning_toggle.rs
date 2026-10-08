@@ -1,7 +1,7 @@
 // PlanningToggle: a button that enables planning mode and opens a
 // commit/cancel modal. Headless-safe; tests drive it with `Interaction`.
 
-use bevy::prelude::*;
+use bevy::{a11y::AccessibilityNode, prelude::*};
 
 pub const TOGGLE_LABEL: &str = "Enable Planning Mode";
 
@@ -38,6 +38,10 @@ pub struct PlanningToggleLabel;
 
 #[derive(Component)]
 pub struct PlanningModal;
+
+/// Marks the visible title that names the planning modal.
+#[derive(Component)]
+pub struct PlanningModalTitle;
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlanningModalAction {
@@ -108,9 +112,17 @@ fn spawn_planning_toggle(mut commands: Commands) {
                     },
                     ..default()
                 },
+                AccessibilityNode::from({
+                    let mut node = bevy::a11y::accesskit::NodeBuilder::new(
+                        bevy::a11y::accesskit::Role::Dialog,
+                    );
+                    node.set_name("Planning Mode".to_string());
+                    node
+                }),
                 PlanningModal,
             ))
             .with_children(|modal| {
+                modal.spawn((text("Planning Mode"), PlanningModalTitle));
                 for (label, action) in [
                     ("Commit", PlanningModalAction::Commit),
                     ("Cancel", PlanningModalAction::Cancel),
@@ -229,10 +241,10 @@ mod tests {
         assert_eq!(label_of(&app, button), "Enable Planning Mode");
         press_action(&mut app, PlanningModalAction::Cancel);
         assert_eq!(label_of(&app, button), "Enable Planning Mode");
-        assert!(!state(&app).committed);
+        assert!(!state(&app).has_committed);
         press_action(&mut app, PlanningModalAction::Commit);
         assert_eq!(label_of(&app, button), "Enable Planning Mode");
-        assert!(state(&app).committed);
+        assert!(state(&app).has_committed);
         assert_eq!(modal_display(&mut app), Display::None);
     }
 
@@ -270,7 +282,30 @@ mod tests {
             .world
             .query_filtered::<Entity, With<PlanningModal>>()
             .single(&app.world);
-        assert_eq!(app.world.get::<Children>(modal).unwrap().len(), 2);
+        assert_eq!(app.world.get::<Children>(modal).unwrap().len(), 3);
+    }
+
+    #[test]
+    fn modal_has_a_visible_title_and_matching_accessible_name() {
+        let mut app = app();
+        let modal = app
+            .world
+            .query_filtered::<Entity, With<PlanningModal>>()
+            .single(&app.world);
+        let title = app
+            .world
+            .query_filtered::<Entity, With<PlanningModalTitle>>()
+            .single(&app.world);
+
+        assert_eq!(label_of(&app, modal), "Planning Mode");
+        assert_eq!(
+            app.world.get::<Text>(title).unwrap().sections[0].value,
+            "Planning Mode"
+        );
+        assert_eq!(
+            app.world.get::<AccessibilityNode>(modal).unwrap().name(),
+            Some("Planning Mode")
+        );
     }
 
     #[test]
