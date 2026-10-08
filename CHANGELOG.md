@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Frontend: Render commit state flag for test visibility — t_1f3dffee
 - Frontend: Implement modal with Commit and Cancel buttons [Revision 1] — t_6fbdade7. All acceptance criteria are satisfied; no defects detected.
 - Testing: Create PlanningToggle.test.tsx with correct import — t_fc08bb3a
 - Backend: Create headless integration test for 100 ticks with 200 vehicles (deferred part) — t_3e3ead01
