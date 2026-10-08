@@ -53,6 +53,9 @@ run_and_check "cargo test -p tj_core fixed_ticks_are_independent_of_frame_partit
 # Step 3: cargo test --workspace
 run_and_check "cargo test --workspace" "cargo test"
 
+# Explicit regression gate for the residential zone per-side density model.
+run_and_check "cargo test -p tj_city density_tests" "residential zone density tests"
+
 # Explicit regression gate for the monthly traffic report JSON layout.
 run_and_check "cargo test -p tj_analytics monthly_report_tests" "monthly traffic report layout test"
 

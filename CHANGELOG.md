@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- M2.4 (backend): Implement a basic density model: each side of a residential zone has a `density` field (0..1) — t_30fd4d2e. The implementation satisfies the density model requirement and includes a passing unit test.
+- Resolve repeated review findings: [M2.4][Backend] Implement a basic density model: each side of a residential zone has a `density` field (0..1) [Revision 2] — t_1fbaa8ad. The implementation fixes the cargo test invocation and adds the required density model with unit tests, satisfying all acceptance criteria.
+- M1.3 (testing): Write unit tests that assert there are no duplicate edges and that the graph remains connected after each add/remove operation — t_4c76e3ac
+- M1.3 (testing): Write unit tests that assert there are no duplicate edges and that the graph remains connected after each add/remove operation — t_3b16be53
+- M6.4 (frontend): Add a side‑panel that shows a numeric comparison of current vs projected metrics (average commute, congestion, cost) after a plan is applied — t_9d150453. The side‑panel implementation fully satisfies the M6.4 acceptance criterion.
+- M1.3 (testing): Write unit tests that assert there are no duplicate edges and that the graph remains connected after each add/remove operation — t_dcd523e8
+- M2.2 (backend): Define a `ZoneType` enum and store zone metadata in a per‑segment data structure — t_ca4f23a9
 - M1.1 (backend): Add a fixed‑time simulation tick system that steps simulation logic at a constant rate regardless of frame rendering — t_34d906f9. The card adds a complete fixed‑time simulation tick system via the FixedTickRunner struct, defines timing primitives (Ticker, Tick) and constants, provides an advance method that executes simulation s
 - M3.1 (backend): Define `Household` and `JobZone` structures that aggregate demographic data from zone density models — t_856e2c1d
 - M1.1 (backend): Add a fixed‑time simulation tick system that steps simulation logic at a constant rate regardless of frame rendering — t_a25964b3
