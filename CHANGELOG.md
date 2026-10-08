@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Frontend: Create PlanningToggle component — t_b5d217fe
 - Resolve repeated review findings: Resolve repeated review findings: [M5.1][Backend] Generate a congestion heatmap by aggregating the density of vehicles per lane segment each tick — t_da36a8e2
 - M1.3 (testing): Write unit tests that assert there are no duplicate edges and that the graph remains connected after each add/remove operation [Revision 1] — t_a26f56c2. The submitted changes implement the required unit tests for duplicate edge detection and connectivity preservation after add/remove operations, and integrate them into the verification pipeline.
 - M4.5 (frontend): Add an on‑screen UI widget that displays the current number of moving vehicles (frontend) — t_dc806144. Implementation adds an on‑screen UI widget that correctly displays the current number of moving vehicles, with a focused test verifying the functionality.
