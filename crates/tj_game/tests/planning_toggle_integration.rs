@@ -140,7 +140,7 @@ fn modal_interaction_in_the_composed_ui_matches_plugin_contract() {
 
     press_action(&mut app, PlanningModalAction::Commit);
     let state = *app.world.resource::<PlanningToggleState>();
-    assert!(state.planning && state.committed && !state.modal_open);
+    assert!(state.planning && state.has_committed && !state.modal_open);
     assert_eq!(style_of::<PlanningModal>(&mut app).display, Display::None);
 }
 
