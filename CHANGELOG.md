@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Infra: Ensure required test dependencies are available — t_f3ed32a7
 - Testing: Verify Test Imports and Accessibility — t_fbf8ade3
 - Testing: Implement Edge Duplication Test Logic — t_bb239ac7
 - Testing: Create a Test Skeleton — t_27b634b7
