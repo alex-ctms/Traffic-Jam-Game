@@ -46,7 +46,14 @@ pub struct PlanningModalTitle;
 
 /// Stable identifier for the visible planning modal title.
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
-pub struct PlanningModalTitleId(pub &'static str);
+pub struct UiElementId(pub &'static str);
+
+/// String reference used by a UI container's `aria-labelledby` relationship.
+///
+/// Bevy UI has no DOM attributes, so this keeps the HTML-equivalent reference
+/// alongside the AccessKit relationship exposed to assistive technology.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AriaLabelledBy(pub &'static str);
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlanningModalAction {
@@ -128,12 +135,13 @@ fn spawn_planning_toggle(mut commands: Commands) {
                     node
                 }),
                 PlanningModal,
+                AriaLabelledBy(PLANNING_MODAL_TITLE_ID),
             ))
             .with_children(|modal| {
                 modal.spawn((
                     text("Planning Mode"),
                     PlanningModalTitle,
-                    PlanningModalTitleId(PLANNING_MODAL_TITLE_ID),
+                    UiElementId(PLANNING_MODAL_TITLE_ID),
                     AccessibilityNode::from({
                         let mut node = bevy::a11y::accesskit::NodeBuilder::new(
                             bevy::a11y::accesskit::Role::Heading,
@@ -329,7 +337,11 @@ mod tests {
             .single(&app.world);
         assert!(app.world.get::<Children>(modal).unwrap().contains(&title));
         assert_eq!(
-            app.world.get::<PlanningModalTitleId>(title).unwrap().0,
+            app.world.get::<UiElementId>(title).unwrap().0,
+            PLANNING_MODAL_TITLE_ID
+        );
+        assert_eq!(
+            app.world.get::<AriaLabelledBy>(modal).unwrap().0,
             PLANNING_MODAL_TITLE_ID
         );
 
