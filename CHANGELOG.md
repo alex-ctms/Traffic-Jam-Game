@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Resolve repeated review findings: [M1.4][Testing] Write a property test that verifies that removal of a road never increases the number of connected components containing zone node [Revision 2] — t_d02d0e29. Added a property test in crates/tj_network/tests/zone_connectivity.rs that checks that removing any road never increases the number of connected components containing zone nodes, updated Cargo.toml wi
 - Frontend: Implement modal dialog for commit/cancel — t_71b83a3a
 - M3.1 (backend): Define `Household` and `JobZone` structures that aggregate demographic data from zone density models — t_4eb73d17
 - Frontend: Create PlanningToggle component — t_b5d217fe
