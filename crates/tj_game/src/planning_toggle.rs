@@ -216,8 +216,11 @@ mod tests {
         assert_eq!(label_of(&app, button), "Enable Planning Mode");
         press_action(&mut app, PlanningModalAction::Cancel);
         assert_eq!(label_of(&app, button), "Enable Planning Mode");
+        assert!(!state(&app).committed);
         press_action(&mut app, PlanningModalAction::Commit);
         assert_eq!(label_of(&app, button), "Enable Planning Mode");
+        assert!(state(&app).committed);
+        assert_eq!(modal_display(&mut app), Display::None);
     }
 
     #[test]
