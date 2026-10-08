@@ -20,6 +20,24 @@ pub enum ZoneType {
     Farm,
 }
 
+/// Zoning designation stored on a single road segment's frontage.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ZoneMetadata {
+    pub zone_type: ZoneType,
+    /// Optional player-set density cap from 0.0 through 1.0; `None` lets the market decide.
+    pub max_density: Option<f32>,
+}
+
+impl ZoneMetadata {
+    /// Create metadata for `zone_type` with no density cap.
+    pub fn new(zone_type: ZoneType) -> Self {
+        Self {
+            zone_type,
+            max_density: None,
+        }
+    }
+}
+
 /// One of the two frontage sides of a physical road segment.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FrontageSide {
@@ -76,8 +94,8 @@ pub struct LaneSegment {
     pub start_id: u32,
     pub end_id: u32,
     pub length: f32,
-    /// Current land-use designation, or `None` while the frontage is unzoned.
-    pub zone: Option<ZoneType>,
+    /// Current zoning metadata, or `None` while the frontage is unzoned.
+    pub zone: Option<ZoneMetadata>,
     /// Residential frontage density per side, normalized to 0.0 through 1.0.
     /// Index 0 is left and index 1 is right.
     pub density: [f32; 2],
@@ -94,6 +112,11 @@ impl LaneSegment {
             zone: None,
             density: [0.0; 2],
         }
+    }
+
+    fn is_residential(&self) -> bool {
+        self.zone
+            .is_some_and(|zone| zone.zone_type == ZoneType::Residential)
     }
 }
 
@@ -247,7 +270,8 @@ impl LaneGraph {
         self.road_segments.get(&road_id).map(Vec::as_slice)
     }
 
-    /// Assign a land-use designation to a segment on `road_id`.
+    /// Assign a land-use designation to a segment on `road_id`, replacing any
+    /// previous metadata (including its density cap).
     /// Returns false when the road or segment does not exist.
     pub fn assign_zone(&mut self, road_id: u32, segment_id: u64, zone: ZoneType) -> bool {
         let Some(segment) = self
@@ -257,17 +281,46 @@ impl LaneGraph {
         else {
             return false;
         };
-        segment.zone = Some(zone);
+        segment.zone = Some(ZoneMetadata::new(zone));
         true
     }
 
     /// Get a segment's current designation. `None` means unknown or unzoned.
     pub fn get_zone(&self, road_id: u32, segment_id: u64) -> Option<ZoneType> {
+        self.get_zone_metadata(road_id, segment_id)
+            .map(|metadata| metadata.zone_type)
+    }
+
+    /// Get a segment's full zoning metadata. `None` means unknown or unzoned.
+    pub fn get_zone_metadata(&self, road_id: u32, segment_id: u64) -> Option<ZoneMetadata> {
         self.road_segments
             .get(&road_id)?
             .iter()
             .find(|segment| segment.id == segment_id)?
             .zone
+    }
+
+    /// Set or clear the density cap (0.0 through 1.0) on a zoned segment.
+    /// Returns false for missing/unzoned segments or out-of-range values.
+    pub fn set_max_density(
+        &mut self,
+        road_id: u32,
+        segment_id: u64,
+        max_density: Option<f32>,
+    ) -> bool {
+        if max_density.is_some_and(|cap| !cap.is_finite() || !(0.0..=1.0).contains(&cap)) {
+            return false;
+        }
+        let Some(metadata) = self
+            .road_segments
+            .get_mut(&road_id)
+            .and_then(|segments| segments.iter_mut().find(|segment| segment.id == segment_id))
+            .and_then(|segment| segment.zone.as_mut())
+        else {
+            return false;
+        };
+        metadata.max_density = max_density;
+        true
     }
 
     /// Set residential frontage density to a value from 0.0 through 1.0.
@@ -295,7 +348,7 @@ impl LaneGraph {
         else {
             return false;
         };
-        if segment.zone != Some(ZoneType::Residential) {
+        if !segment.is_residential() {
             return false;
         }
         segment.density[match side {
@@ -312,7 +365,7 @@ impl LaneGraph {
             .get(&road_id)?
             .iter()
             .find(|segment| segment.id == segment_id)?;
-        (segment.zone == Some(ZoneType::Residential)).then_some(segment.density[0])
+        segment.is_residential().then_some(segment.density[0])
     }
 
     /// Get density for one residential frontage side.
@@ -331,7 +384,7 @@ impl LaneGraph {
             FrontageSide::Left => 0,
             FrontageSide::Right => 1,
         };
-        (segment.zone == Some(ZoneType::Residential)).then_some(segment.density[index])
+        segment.is_residential().then_some(segment.density[index])
     }
 
     pub fn get_lane_ids_at_intersection(&self, intersection_id: u32) -> Option<&HashSet<u64>> {
@@ -562,6 +615,49 @@ mod tests {
         assert_eq!(graph.get_zone(road_id, second_segment), None);
         assert!(!graph.assign_zone(road_id, u64::MAX, ZoneType::Industrial));
         assert!(!graph.assign_zone(u32::MAX, first_segment, ZoneType::Industrial));
+    }
+
+    #[test]
+    fn zone_metadata_is_stored_per_segment() {
+        let mut graph = LaneGraph::new();
+        let road_id = graph.add_road(vec![(1, 2, 10.0), (2, 3, 12.0)]).unwrap();
+        let segments = graph.get_segments(road_id).unwrap();
+        let office = segments[0].id;
+        let unzoned = segments[1].id;
+
+        assert!(!graph.set_max_density(road_id, unzoned, Some(0.5)));
+        assert!(graph.assign_zone(road_id, office, ZoneType::Office));
+        assert_eq!(
+            graph.get_zone_metadata(road_id, office),
+            Some(ZoneMetadata::new(ZoneType::Office))
+        );
+        assert!(graph.set_max_density(road_id, office, Some(0.4)));
+        assert_eq!(
+            graph.get_segments(road_id).unwrap()[0].zone,
+            Some(ZoneMetadata {
+                zone_type: ZoneType::Office,
+                max_density: Some(0.4),
+            })
+        );
+        assert_eq!(graph.get_zone_metadata(road_id, unzoned), None);
+        assert!(!graph.set_max_density(road_id, office, Some(1.5)));
+        assert!(!graph.set_max_density(road_id, office, Some(f32::NAN)));
+        assert!(graph.set_max_density(road_id, office, None));
+        assert_eq!(
+            graph
+                .get_zone_metadata(road_id, office)
+                .unwrap()
+                .max_density,
+            None
+        );
+
+        // Rezoning replaces the metadata, including any cap.
+        assert!(graph.set_max_density(road_id, office, Some(0.8)));
+        assert!(graph.assign_zone(road_id, office, ZoneType::Farm));
+        assert_eq!(
+            graph.get_zone_metadata(road_id, office),
+            Some(ZoneMetadata::new(ZoneType::Farm))
+        );
     }
 
     #[test]
