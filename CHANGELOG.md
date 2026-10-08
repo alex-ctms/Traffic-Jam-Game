@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Testing: Verify modal is not visible initially — t_1809307c
 - Testing: Verify button displays "Enable Planning Mode" — t_74a52f64
 - Testing: Render PlanningToggle component in test — t_865f03b2
 - Frontend: Render commit state flag for test visibility — t_1f3dffee
