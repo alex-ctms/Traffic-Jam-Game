@@ -50,6 +50,9 @@ fi
 # Fixed-rate simulation must produce the same ticks for different frame schedules.
 run_and_check "cargo test -p tj_core fixed_ticks_are_independent_of_frame_partitioning" "fixed-tick frame independence test"
 
+# A vehicle must stop at a red signal and proceed when the phase turns green.
+run_and_check "cargo test -p tj_traffic vehicle_approaching_red_signal_waits_at_stop_line_until_green" "red traffic signal vehicle delay test"
+
 # Step 3: cargo test --workspace
 run_and_check "cargo test --workspace" "cargo test"
 
