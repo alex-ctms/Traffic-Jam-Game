@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M3.2 (backend): Implement a daily trip generator that creates a `Trip` from each household to a job zone based on a simple probability matrix [Revision 1] — t_7b717f20. The daily trip generator implementation is complete and meets both acceptance criteria. The code in crates/tj_demand/src/lib.rs provides a TripProbabilityMatrix struct with validation, probability loo
 - M6.3 (testing): Headless integration test that stages a new road in planning mode and confirms the live network remains unchanged until an `approve` call — t_d0b74e63. The headless integration test has been added to crates/tj_network/tests/planning_mode_integration.rs. The test `staged_road_does_not_change_live_network_until_approved` stages a road via `propose_add_
 - Frontend: Create test file for Enable Planning Mode modal — t_cb538af1. The test file enablePlanningMode.test.tsx was created in the project's tests/ directory. It exists, contains placeholder comments to satisfy the compiler, and is included in the project's test suite c
 - Testing: Write tests for modal behavior and cancel functionality [Revision 1] (deferred part) — t_2a9a060f
