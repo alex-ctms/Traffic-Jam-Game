@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Testing: Create Property Test Skeleton for Road Removal — t_f4aa9dff. The added code fully satisfies all acceptance criteria; it compiles and runs without errors.
 - M5.3 (testing): Unit test that the heatmap value for a segment increases proportionally to the number of vehicles on it — t_d40bf56d. The implementation adds a unit test `lane_segment_heatmap_density_increases_proportionally_with_vehicle_count` in `crates/tj_analytics/src/lib.rs` that spawning 1, 2, and 4 vehicles on a segment and v
 - Testing: Create PlanningToggle test file and import component — t_5cf11ec2
 - Infra: Stage, commit and verify local changes — t_6266be93
