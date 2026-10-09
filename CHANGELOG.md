@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M4.4 (testing): Headless integration test that runs 100 simulation ticks with 200 vehicles and verifies no panics or deadlocks [Revision 1] — t_500c2aeb. The card's acceptance criteria are fully satisfied: the headless integration test runs 100 ticks with 200 vehicles and includes explicit detection of panics and deadlocks, and it is invoked via ops/ve
 - Frontend: Implement test: clicking button shows modal with Commit & Cancel buttons — t_6671e4de
 - Testing: Create Property Test Skeleton for Road Removal — t_f4aa9dff. The added code fully satisfies all acceptance criteria; it compiles and runs without errors.
 - M5.3 (testing): Unit test that the heatmap value for a segment increases proportionally to the number of vehicles on it — t_d40bf56d. The implementation adds a unit test `lane_segment_heatmap_density_increases_proportionally_with_vehicle_count` in `crates/tj_analytics/src/lib.rs` that spawning 1, 2, and 4 vehicles on a segment and v
