@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M1.4 (testing): Write a property test that verifies that removal of a road never increases the number of connected components containing zone nodes — t_dd0b5b63
 - Testing: Add test harness configuration — t_9f43ebf2
 - Frontend: Add accessible title and aria-labelledby [Revision 1] (deferred part) — t_b529a349
 - Frontend: Integrate PlanningToggle into main UI (deferred part) (deferred part) (deferred part) — t_8ebf7254
