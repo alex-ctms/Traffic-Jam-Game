@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M5.3 (testing): Unit test that the heatmap value for a segment increases proportionally to the number of vehicles on it — t_d40bf56d. The implementation adds a unit test `lane_segment_heatmap_density_increases_proportionally_with_vehicle_count` in `crates/tj_analytics/src/lib.rs` that spawning 1, 2, and 4 vehicles on a segment and v
 - Testing: Create PlanningToggle test file and import component — t_5cf11ec2
 - Infra: Stage, commit and verify local changes — t_6266be93
 - M3.2 (backend): Implement a daily trip generator that creates a `Trip` from each household to a job zone based on a simple probability matrix [Revision 1] — t_7b717f20. The daily trip generator implementation is complete and meets both acceptance criteria. The code in crates/tj_demand/src/lib.rs provides a TripProbabilityMatrix struct with validation, probability loo
