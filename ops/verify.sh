@@ -71,6 +71,9 @@ run_and_check "cargo test -p tj_network --test graph_integrity" "lane graph inte
 # Explicit property regression gate for zone connectivity after every road removal.
 run_and_check "cargo test -p tj_network --test zone_connectivity" "zone connectivity road-removal property test"
 
+# Explicit regression gate for M2.5: Residential zoning stores type and density.
+run_and_check "cargo test -p tj_network assigning_residential_stores_zone_type_and_density" "residential zone assignment storage test"
+
 # Explicit regression gate for staged planning edits and approval.
 run_and_check "cargo test -p tj_network planning::tests" "planning overlay regression tests"
 
