@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M2.5 (testing): Unit test that assigning `Residential` to a segment correctly stores the type and associated density value — t_865f7382. The card implements both M2.5 acceptance criteria: a unit test that assigning Residential to a segment correctly stores the zone type and associated density value, and an automated regression gate in 
 - Infra: Verify implementation with ops/verify.sh — t_f499b1b5
 - M1.4 (testing): Write a property test that verifies that removal of a road never increases the number of connected components containing zone nodes — t_dd0b5b63
 - Testing: Add test harness configuration — t_9f43ebf2
