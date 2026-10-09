@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Testing: Write Test: Commit Button Hides Modal and Sets Committed Flag — t_bb0b14aa
 - Testing: Write Test: Cancel Button Hides Modal and Preserves State — t_6cc76931
 - M4.4 (testing): Headless integration test that runs 100 simulation ticks with 200 vehicles and verifies no panics or deadlocks [Revision 1] — t_500c2aeb. The card's acceptance criteria are fully satisfied: the headless integration test runs 100 ticks with 200 vehicles and includes explicit detection of panics and deadlocks, and it is invoked via ops/ve
 - Frontend: Implement test: clicking button shows modal with Commit & Cancel buttons — t_6671e4de
