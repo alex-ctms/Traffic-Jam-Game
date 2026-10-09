@@ -805,6 +805,32 @@ mod tests {
     }
 
     #[test]
+    fn assigning_residential_stores_zone_type_and_density() {
+        let mut graph = LaneGraph::new();
+        let road_id = graph.add_road(vec![(1, 2, 10.0)]).unwrap();
+        let segment_id = graph.get_segments(road_id).unwrap()[0].id;
+
+        assert!(graph.assign_zone(road_id, segment_id, ZoneType::Residential));
+        assert!(graph.set_max_density(road_id, segment_id, Some(0.6)));
+        assert!(graph.set_density(road_id, segment_id, 0.4));
+
+        let segment = &graph.get_segments(road_id).unwrap()[0];
+        assert_eq!(
+            segment.zone,
+            Some(ZoneMetadata {
+                zone_type: ZoneType::Residential,
+                max_density: Some(0.6),
+            })
+        );
+        assert_eq!(segment.density, [0.4, 0.4]);
+        assert_eq!(
+            graph.get_zone(road_id, segment_id),
+            Some(ZoneType::Residential)
+        );
+        assert_eq!(graph.get_density(road_id, segment_id), Some(0.4));
+    }
+
+    #[test]
     fn find_path_returns_shortest_connected_lane_sequence() {
         let mut graph = LaneGraph::new();
         graph.add_segment(0, 1, 1.0).unwrap();
