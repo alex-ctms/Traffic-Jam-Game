@@ -375,6 +375,31 @@ mod tests {
         assert_eq!(next_tick.tick, 1);
         assert_eq!(next_tick.segments[0].vehicle_count, 2);
     }
+
+    #[test]
+    fn lane_segment_heatmap_density_increases_proportionally_with_vehicle_count() {
+        let mut network = LaneGraph::new();
+        let road_id = network.add_segment(10, 20, 500.0).unwrap();
+        let lane_id = network.get_road_lanes(road_id).unwrap()[0].id;
+        let mut simulation = TrafficSimulation::new(network);
+
+        let mut densities = Vec::new();
+        let mut spawned = 0;
+        for vehicle_count in [1, 2, 4] {
+            while spawned < vehicle_count {
+                simulation.spawn_vehicle(lane_id, 1.0).unwrap();
+                spawned += 1;
+            }
+            let heatmap = generate_lane_segment_heatmap(&simulation);
+            let segment = &heatmap.segments[0];
+            assert_eq!(segment.vehicle_count, vehicle_count);
+            densities.push(segment.vehicles_per_kilometer);
+        }
+
+        assert_eq!(densities, [2.0, 4.0, 8.0]);
+        assert_eq!(densities[1] / densities[0], 2.0);
+        assert_eq!(densities[2] / densities[0], 4.0);
+    }
 }
 
 #[cfg(test)]
