@@ -74,6 +74,9 @@ run_and_check "cargo test -p tj_network --test zone_connectivity" "zone connecti
 # Explicit regression gate for staged planning edits and approval.
 run_and_check "cargo test -p tj_network planning::tests" "planning overlay regression tests"
 
+# Explicit regression gate for the daily household-to-job-zone trip generator.
+run_and_check "cargo test -p tj_demand daily_trip_tests" "daily trip generator tests"
+
 # Explicit regression gate for the headless demand-generation integration test.
 run_and_check "cargo test -p tj_game --test headless_simulation" "headless simulation integration test"
 
