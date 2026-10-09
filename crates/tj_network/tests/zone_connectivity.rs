@@ -48,6 +48,26 @@ fn zone_component_count(graph: &LaneGraph) -> usize {
     count
 }
 
+struct TestRandomGraph {
+    graph: LaneGraph,
+}
+
+impl TestRandomGraph {
+    fn new(zone_count: usize, road_count: usize) -> Self {
+        let mut graph = LaneGraph::new();
+        for road in 0..road_count {
+            let start = road as u32 % zone_count as u32;
+            let end = (start + 1) % zone_count as u32;
+            let road_id = graph
+                .add_segment(start, end, 1.0)
+                .expect("random graph road should be added");
+            let segment_id = graph.get_segments(road_id).unwrap()[0].id;
+            graph.assign_zone(road_id, segment_id, ZoneType::Residential);
+        }
+        Self { graph }
+    }
+}
+
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
 
@@ -85,5 +105,17 @@ proptest! {
                 "removing road {road_id} increased zone components from {before} to {after}"
             );
         }
+    }
+
+    #[test]
+    fn road_removal_property_test_skeleton(
+        zone_count in 2usize..=5,
+        road_count in 1usize..=10,
+    ) {
+        let random_graph = TestRandomGraph::new(zone_count, road_count);
+        let initial_components = zone_component_count(&random_graph.graph);
+        println!("Initial zone component count: {initial_components}");
+
+        // Setup complete – waiting for removal logic to be added
     }
 }
