@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- M6.3 (testing): Headless integration test that stages a new road in planning mode and confirms the live network remains unchanged until an `approve` call — t_d0b74e63. The headless integration test has been added to crates/tj_network/tests/planning_mode_integration.rs. The test `staged_road_does_not_change_live_network_until_approved` stages a road via `propose_add_
 - Frontend: Create test file for Enable Planning Mode modal — t_cb538af1. The test file enablePlanningMode.test.tsx was created in the project's tests/ directory. It exists, contains placeholder comments to satisfy the compiler, and is included in the project's test suite c
 - Testing: Write tests for modal behavior and cancel functionality [Revision 1] (deferred part) — t_2a9a060f
 - M2.5 (testing): Unit test that assigning `Residential` to a segment correctly stores the type and associated density value — t_865f7382. The card implements both M2.5 acceptance criteria: a unit test that assigning Residential to a segment correctly stores the zone type and associated density value, and an automated regression gate in 
