@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Backend: Verify current Git branch — t_0c047b14
 - Testing: Implement Road Removal Logic and Assertion — t_3c52ab64
 - Testing: Write Test: Commit Button Hides Modal and Sets Committed Flag — t_bb0b14aa
 - Testing: Write Test: Cancel Button Hides Modal and Preserves State — t_6cc76931
