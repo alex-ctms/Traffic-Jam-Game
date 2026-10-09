@@ -53,6 +53,9 @@ run_and_check "cargo test -p tj_core fixed_ticks_are_independent_of_frame_partit
 # A vehicle must stop at a red signal and proceed when the phase turns green.
 run_and_check "cargo test -p tj_traffic vehicle_approaching_red_signal_waits_at_stop_line_until_green" "red traffic signal vehicle delay test"
 
+# Headless load smoke test: exercise the traffic simulation with 200 vehicles for 100 ticks.
+run_and_check "cargo test -p tj_traffic --test scale_smoke" "200 vehicle, 100 tick headless traffic test"
+
 # Step 3: cargo test --workspace
 run_and_check "cargo test --workspace" "cargo test"
 
